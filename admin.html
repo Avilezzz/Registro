@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Participantes</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.js"></script>
+</head>
+
+<body class="bg-slate-100 min-h-screen p-4">
+
+    <div class="max-w-7xl mx-auto">
+
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+
+            <div>
+                <h1 class="text-3xl font-bold">
+                    Participantes Registrados
+                </h1>
+
+                <p class="text-gray-600">
+                    Actualización en tiempo real
+                </p>
+            </div>
+
+            <button id="btnPdf"
+                class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-lg font-bold">
+                Descargar PDF
+            </button>
+
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow mb-4">
+
+            <div class="flex justify-between">
+
+                <span class="font-bold">
+                    Total inscritos:
+                </span>
+
+                <span id="totalParticipantes">
+                    0
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="bg-white rounded-xl shadow overflow-auto">
+
+            <table class="w-full">
+
+                <thead class="bg-slate-800 text-white">
+
+                    <tr>
+                        <th class="p-3 text-left">#</th>
+                        <th class="p-3 text-left">Nombre</th>
+                        <th class="p-3 text-left">Curso</th>
+                        <th class="p-3 text-left">Participa</th>
+                        <th class="p-3 text-left">Fecha</th>
+                        <th class="p-3 text-left">WhatsApp</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="tabla"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <script type="module">
+
+        import { createClient }
+            from "https://esm.sh/@supabase/supabase-js@2";
+
+        const supabase = createClient(
+            "https://mdcayyifejqfvvoiphmi.supabase.co",
+            "sb_publishable_lEzIrscGXzVAJ-c00FT2GQ_BMuHsVmK"
+        );
+
+        let participantes = [];
+
+        async function cargarDatos() {
+
+            const { data, error } = await supabase
+                .from("registro_eventos")
+                .select("*")
+                .order("created_at", { ascending: false });
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            participantes = data || [];
+
+            document.getElementById("totalParticipantes")
+                .textContent = participantes.length;
+
+            document.getElementById("tabla").innerHTML =
+                participantes.map((item, index) => `
+
+                <tr class="border-b hover:bg-slate-50">
+
+                    <td class="p-3">${index + 1}</td>
+
+                    <td class="p-3 font-semibold">
+                        ${item.nombre_apellido}
+                    </td>
+
+                    <td class="p-3">
+                        ${item.curso}
+                    </td>
+
+                    <td class="p-3">
+                        ${item.participa ? "SI" : "NO"}
+                    </td>
+
+                    <td class="p-3">
+                        ${new Date(item.created_at).toLocaleString()}
+                    </td>
+
+                    <td class="p-3">
+
+                        <a
+                            href="${item.whatsapp_link}"
+                            target="_blank"
+                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg">
+
+                            WhatsApp
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+            `).join("");
+
+        }
+
+        await cargarDatos();
+
+        supabase
+            .channel("registro_eventos_realtime")
+            .on(
+                "postgres_changes",
+                {
+                    event: "*",
+                    schema: "public",
+                    table: "registro_eventos"
+                },
+                async () => {
+
+                    console.log("Actualización detectada");
+
+                    await cargarDatos();
+
+                }
+            )
+            .subscribe();
+
+        document
+            .getElementById("btnPdf")
+            .addEventListener("click", () => {
+
+                const { jsPDF } = window.jspdf;
+
+                const doc = new jsPDF();
+
+                doc.setFontSize(18);
+
+                doc.text(
+                    "LISTADO DE PARTICIPANTES",
+                    14,
+                    20
+                );
+
+                doc.autoTable({
+
+                    startY: 30,
+
+                    head: [[
+                        "#",
+                        "NOMBRE",
+                        "CURSO",
+                        "PARTICIPA",
+                        "FECHA"
+                    ]],
+
+                    body: participantes.map((item, index) => [
+
+                        index + 1,
+                        item.nombre_apellido,
+                        item.curso,
+                        item.participa ? "SI" : "NO",
+                        new Date(item.created_at).toLocaleString()
+
+                    ])
+
+                });
+
+                doc.save("participantes.pdf");
+
+            });
+
+    </script>
+
+</body>
+
+</html>

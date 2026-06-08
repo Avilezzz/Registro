@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Eventos</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const supabaseUrl = 'https://mdcayyifejqfvvoiphmi.supabase.co';
+const supabaseKey = 'sb_publishable_lEzIrscGXzVAJ-c00FT2GQ_BMuHsVmK';
+
+window.supabase = createClient(supabaseUrl, supabaseKey);
+</script>
+</head>
+
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+<div class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-md">
+
+<h1 class="text-2xl font-bold text-center mb-6">
+Registro de Participantes
+</h1>
+
+<form id="registroForm" class="space-y-4">
+
+<div>
+<label class="font-semibold">Nombre y Apellido</label>
+<input
+id="nombre"
+type="text"
+required
+class="w-full border rounded-lg p-3 mt-1"
+placeholder="Nombre completo">
+</div>
+
+<div>
+<label class="font-semibold">Curso</label>
+<input
+id="curso"
+type="text"
+required
+class="w-full border rounded-lg p-3 mt-1"
+placeholder="Ej: TERCERO BGU A">
+</div>
+
+<div>
+<label class="font-semibold">Número de Teléfono</label>
+<input
+id="telefono"
+type="tel"
+required
+class="w-full border rounded-lg p-3 mt-1"
+placeholder="0999999999">
+</div>
+
+<div class="flex items-center gap-3">
+<input
+id="participa"
+type="checkbox"
+checked
+class="w-5 h-5">
+<label class="font-semibold">
+Confirmo que participaré en el evento
+</label>
+</div>
+
+<button
+type="submit"
+class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700">
+Registrar
+</button>
+
+</form>
+
+<div id="mensaje" class="mt-4 text-center"></div>
+
+</div>
+
+<script type="module">
+
+function limpiarTexto(texto){
+    return texto
+        .trim()
+        .replace(/\s+/g,' ')
+        .toUpperCase();
+}
+
+document.getElementById('registroForm')
+.addEventListener('submit', async (e)=>{
+
+    e.preventDefault();
+
+    const nombre = limpiarTexto(
+        document.getElementById('nombre').value
+    );
+
+    const curso = limpiarTexto(
+        document.getElementById('curso').value
+    );
+
+    const telefonoOriginal =
+        document.getElementById('telefono').value
+        .replace(/\D/g,'');
+
+    const participa =
+        document.getElementById('participa').checked;
+
+    const whatsappLink =
+        `https://wa.me/593${telefonoOriginal.replace(/^0/,'')}`;
+
+    const { error } = await window.supabase
+    .from('registro_eventos')
+    .insert([{
+        nombre_apellido: nombre,
+        participa: participa,
+        curso: curso,
+        telefono: telefonoOriginal,
+        whatsapp_link: whatsappLink
+    }]);
+
+    const mensaje = document.getElementById('mensaje');
+
+    if(error){
+        mensaje.innerHTML =
+        `<span class="text-red-600">${error.message}</span>`;
+        return;
+    }
+
+    mensaje.innerHTML =
+    `<span class="text-green-600 font-bold">Registro guardado correctamente</span>`;
+
+    document.getElementById('registroForm').reset();
+});
+
+</script>
+
+</body>
+</html>
