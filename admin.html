@@ -1,40 +1,635 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Participantes</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Administración</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --ink:    #0f1117;
+      --paper:  #f5f4f0;
+      --accent: #e84f27;
+      --muted:  #8b8b8b;
+      --border: #d9d8d4;
+      --green:  #1d7a4f;
+      --green-light: #e6f5ed;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--ink);
+      color: #fff;
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    header h1 {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.1rem;
+      letter-spacing: 0.04em;
+    }
+    .live-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: #6ee7b7;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .live-dot::before {
+      content: '';
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #6ee7b7;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%,100%{ opacity:1; transform:scale(1); }
+      50%     { opacity:.4; transform:scale(1.3); }
+    }
+
+    /* ── Layout ── */
+    main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── Stats ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .stat-card {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 3px; width: 100%;
+      background: var(--accent);
+    }
+    .stat-card.green::after  { background: var(--green); }
+    .stat-card.gray::after   { background: var(--muted); }
+    .stat-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      margin-bottom: .5rem;
+    }
+    .stat-value {
+      font-size: 2.25rem;
+      font-weight: 700;
+      line-height: 1;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+    .controls input,
+    .controls select {
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: .55rem .9rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      color: var(--ink);
+      background: var(--paper);
+      outline: none;
+      transition: border-color .2s;
+      flex: 1;
+      min-width: 160px;
+    }
+    .controls input:focus,
+    .controls select:focus { border-color: var(--ink); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .55rem 1.1rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: .85rem;
+      cursor: pointer;
+      border: none;
+      transition: opacity .2s, transform .1s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-red   { background: var(--accent); color: #fff; }
+    .btn-dark  { background: var(--ink);    color: #fff; }
+    .btn-green { background: var(--green);  color: #fff; }
+    .btn:hover { opacity: .88; }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      overflow: auto;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr {
+      background: var(--ink);
+      color: #fff;
+    }
+    th {
+      padding: .85rem 1rem;
+      text-align: left;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .72rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    td {
+      padding: .8rem 1rem;
+      font-size: .9rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #fafaf8; }
+
+    .badge {
+      display: inline-block;
+      padding: .2rem .6rem;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 700;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .badge-yes { background: var(--green-light); color: var(--green); }
+    .badge-no  { background: #f3f3f3;             color: var(--muted); }
+
+    .btn-wa {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      background: #25d366;
+      color: #fff;
+      padding: .3rem .75rem;
+      border-radius: 6px;
+      font-size: .8rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: opacity .2s;
+    }
+    .btn-wa:hover { opacity: .85; }
+
+    .btn-delete {
+      background: transparent;
+      border: 1.5px solid #fca5a5;
+      color: #dc2626;
+      padding: .3rem .65rem;
+      border-radius: 6px;
+      font-size: .8rem;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-delete:hover { background: #fee2e2; }
+
+    .empty-row td {
+      text-align: center;
+      color: var(--muted);
+      padding: 3rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .85rem;
+    }
+
+    /* ── Modal confirm ── */
+    #modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999;
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s;
+    }
+    #modal-overlay.show { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: #fff;
+      border-radius: 14px;
+      padding: 2rem;
+      max-width: 360px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      transform: translateY(12px);
+      transition: transform .2s;
+    }
+    #modal-overlay.show .modal-box { transform: translateY(0); }
+    .modal-box h3 {
+      font-weight: 700;
+      margin-bottom: .5rem;
+    }
+    .modal-box p { color: var(--muted); font-size: .9rem; margin-bottom: 1.5rem; }
+    .modal-actions { display: flex; gap: .75rem; justify-content: flex-end; }
+    .btn-cancel {
+      background: var(--paper);
+      border: 1.5px solid var(--border);
+      color: var(--ink);
+      padding: .55rem 1.1rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: .85rem;
+      cursor: pointer;
+    }
+
+    /* ── toast ── */
+    #toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      background: var(--ink); color: #fff;
+      padding: .75rem 1.25rem;
+      border-radius: 10px;
+      font-size: .85rem;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s;
+      z-index: 1000;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    #toast.show { opacity: 1; }
+
+    @media(max-width:640px){
+      th:nth-child(5), td:nth-child(5) { display:none; }
+      .stat-value { font-size: 1.75rem; }
+    }
+  </style>
 </head>
 
-<body class="bg-slate-100 min-h-screen p-4">
+<body>
 
-    <div class="max-w-7xl mx-auto">
+  <!-- Header -->
+  <header>
+    <h1>⚡ PANEL DE ADMINISTRACIÓN</h1>
+    <span class="live-dot">EN VIVO</span>
+  </header>
 
-        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+  <main>
 
-            <div>
-                <h1 class="text-3xl font-bold">
-                    Participantes Registrados
-                </h1>
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total inscritos</div>
+        <div class="stat-value" id="statTotal">0</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Participan</div>
+        <div class="stat-value" id="statSi">0</div>
+      </div>
+      <div class="stat-card gray">
+        <div class="stat-label">No participan</div>
+        <div class="stat-value" id="statNo">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Eventos activos</div>
+        <div class="stat-value" id="statEventos">0</div>
+      </div>
+    </div>
 
-                <p class="text-gray-600">
-                    Actualización en tiempo real
-                </p>
-            </div>
+    <!-- Controls -->
+    <div class="controls">
+      <input type="text" id="buscar" placeholder="🔍  Buscar por nombre o curso…">
+      <select id="filtroEvento">
+        <option value="">Todos los eventos</option>
+      </select>
+      <select id="filtroParticipa">
+        <option value="">Todos</option>
+        <option value="si">Participan</option>
+        <option value="no">No participan</option>
+      </select>
+      <button class="btn btn-red"   id="btnPdf">⬇ PDF</button>
+      <button class="btn btn-green" id="btnXls">⬇ Excel</button>
+    </div>
 
-            <button id="btnPdf"
-                class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-lg font-bold">
-                Descargar PDF
-            </button>
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Curso</th>
+            <th>Evento</th>
+            <th>Participa</th>
+            <th>Fecha</th>
+            <th>WhatsApp</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+      </table>
+    </div>
 
-        </div>
+  </main>
 
+  <!-- Modal confirmación eliminación -->
+  <div id="modal-overlay">
+    <div class="modal-box">
+      <h3>¿Eliminar registro?</h3>
+      <p>Esta acción no se puede deshacer. El participante será removido permanentemente.</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="btnCancelar">Cancelar</button>
+        <button class="btn btn-red" id="btnConfirmarEliminar">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const supabase = createClient(
+      "https://mdcayyifejqfvvoiphmi.supabase.co",
+      "sb_publishable_lEzIrscGXzVAJ-c00FT2GQ_BMuHsVmK"
+    );
+
+    /* ── State ── */
+    let todos        = [];   // todos los registros con nombre de evento
+    let eventosMap   = {};   // id → nombre
+    let pendingDeleteId = null;
+
+    /* ── Toast ── */
+    function toast(msg, ms = 2500) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), ms);
+    }
+
+    /* ── Cargar eventos ── */
+    async function cargarEventos() {
+      const { data } = await supabase
+        .from("eventos")
+        .select("*")
+        .order("nombre");
+
+      if (!data) return;
+
+      eventosMap = {};
+      data.forEach(e => eventosMap[e.id] = e.nombre);
+
+      document.getElementById("statEventos").textContent = data.length;
+
+      const sel = document.getElementById("filtroEvento");
+      sel.innerHTML = '<option value="">Todos los eventos</option>';
+      data.forEach(e => {
+        const opt = document.createElement("option");
+        opt.value = e.id;
+        opt.textContent = e.nombre;
+        sel.appendChild(opt);
+      });
+    }
+
+    /* ── Cargar participantes ── */
+    async function cargarDatos() {
+      const { data, error } = await supabase
+        .from("registro_eventos")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) { console.error(error); return; }
+
+      todos = (data || []).map(r => ({
+        ...r,
+        evento_nombre: eventosMap[r.evento_id] || "—"
+      }));
+
+      renderizar();
+    }
+
+    /* ── Filtrar + renderizar ── */
+    function renderizar() {
+      const buscar     = document.getElementById("buscar").value.toLowerCase();
+      const eventoFil  = document.getElementById("filtroEvento").value;
+      const participaFil = document.getElementById("filtroParticipa").value;
+
+      const filtrados = todos.filter(r => {
+        const matchTexto = !buscar ||
+          r.nombre_apellido.toLowerCase().includes(buscar) ||
+          r.curso.toLowerCase().includes(buscar);
+
+        const matchEvento = !eventoFil ||
+          String(r.evento_id) === String(eventoFil);
+
+        const matchParticipa = !participaFil ||
+          (participaFil === "si" && r.participa) ||
+          (participaFil === "no" && !r.participa);
+
+        return matchTexto && matchEvento && matchParticipa;
+      });
+
+      /* Stats */
+      document.getElementById("statTotal").textContent = todos.length;
+      document.getElementById("statSi").textContent    = todos.filter(r => r.participa).length;
+      document.getElementById("statNo").textContent    = todos.filter(r => !r.participa).length;
+
+      const tbody = document.getElementById("tabla");
+
+      if (filtrados.length === 0) {
+        tbody.innerHTML = `
+          <tr class="empty-row">
+            <td colspan="8">Sin resultados para los filtros aplicados</td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtrados.map((r, i) => `
+        <tr data-id="${r.id}">
+          <td style="color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:.8rem;">${i + 1}</td>
+          <td><strong>${r.nombre_apellido}</strong></td>
+          <td>${r.curso}</td>
+          <td>
+            <span style="
+              background:#f0f0ec;
+              border:1px solid var(--border);
+              border-radius:6px;
+              padding:.2rem .55rem;
+              font-size:.78rem;
+              font-family:'IBM Plex Mono',monospace;
+              white-space:nowrap;
+            ">${r.evento_nombre}</span>
+          </td>
+          <td>
+            <span class="badge ${r.participa ? 'badge-yes' : 'badge-no'}">
+              ${r.participa ? "✓ SÍ" : "✗ NO"}
+            </span>
+          </td>
+          <td style="color:var(--muted); font-size:.82rem; font-family:'IBM Plex Mono',monospace; white-space:nowrap;">
+            ${new Date(r.created_at).toLocaleString("es-EC", {
+              day:"2-digit", month:"short", year:"numeric",
+              hour:"2-digit", minute:"2-digit"
+            })}
+          </td>
+          <td>
+            <a href="${r.whatsapp_link}" target="_blank" class="btn-wa">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Chat
+            </a>
+          </td>
+          <td>
+            <button class="btn-delete" onclick="pedirEliminar(${r.id})">🗑</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    /* ── Eliminar ── */
+    window.pedirEliminar = function(id) {
+      pendingDeleteId = id;
+      document.getElementById("modal-overlay").classList.add("show");
+    };
+
+    document.getElementById("btnCancelar").addEventListener("click", () => {
+      pendingDeleteId = null;
+      document.getElementById("modal-overlay").classList.remove("show");
+    });
+
+    document.getElementById("btnConfirmarEliminar").addEventListener("click", async () => {
+      if (!pendingDeleteId) return;
+      const { error } = await supabase
+        .from("registro_eventos")
+        .delete()
+        .eq("id", pendingDeleteId);
+
+      document.getElementById("modal-overlay").classList.remove("show");
+      pendingDeleteId = null;
+
+      if (error) { toast("❌ Error al eliminar"); return; }
+      toast("✓ Registro eliminado");
+      await cargarDatos();
+    });
+
+    /* ── Filtros reactivos ── */
+    ["buscar","filtroEvento","filtroParticipa"].forEach(id => {
+      document.getElementById(id).addEventListener("input", renderizar);
+      document.getElementById(id).addEventListener("change", renderizar);
+    });
+
+    /* ── PDF ── */
+    document.getElementById("btnPdf").addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "landscape" });
+
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(16);
+      doc.text("LISTADO DE PARTICIPANTES", 14, 18);
+
+      doc.setFont("helvetica","normal");
+      doc.setFontSize(9);
+      doc.setTextColor(120);
+      doc.text(`Generado: ${new Date().toLocaleString("es-EC")}`, 14, 25);
+
+      const visibles = getFiltered();
+
+      doc.autoTable({
+        startY: 32,
+        styles: { font: "helvetica", fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [15,17,23], textColor: 255 },
+        alternateRowStyles: { fillColor: [245,244,240] },
+        head: [["#","NOMBRE","CURSO","EVENTO","PARTICIPA","FECHA"]],
+        body: visibles.map((r, i) => [
+          i + 1,
+          r.nombre_apellido,
+          r.curso,
+          r.evento_nombre,
+          r.participa ? "SÍ" : "NO",
+          new Date(r.created_at).toLocaleString("es-EC")
+        ])
+      });
+
+      doc.save("participantes.pdf");
+    });
+
+    /* ── Excel ── */
+    document.getElementById("btnXls").addEventListener("click", () => {
+      const visibles = getFiltered();
+      const ws = XLSX.utils.json_to_sheet(visibles.map((r, i) => ({
+        "#":          i + 1,
+        "Nombre":     r.nombre_apellido,
+        "Curso":      r.curso,
+        "Evento":     r.evento_nombre,
+        "Participa":  r.participa ? "SÍ" : "NO",
+        "Teléfono":   r.telefono,
+        "Fecha":      new Date(r.created_at).toLocaleString("es-EC"),
+        "WhatsApp":   r.whatsapp_link
+      })));
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Participantes");
+      XLSX.writeFile(wb, "participantes.xlsx");
+    });
+
+    function getFiltered() {
+      const buscar       = document.getElementById("buscar").value.toLowerCase();
+      const eventoFil    = document.getElementById("filtroEvento").value;
+      const participaFil = document.getElementById("filtroParticipa").value;
+
+      return todos.filter(r => {
+        const matchTexto = !buscar ||
+          r.nombre_apellido.toLowerCase().includes(buscar) ||
+          r.curso.toLowerCase().includes(buscar);
+        const matchEvento = !eventoFil || String(r.evento_id) === String(eventoFil);
+        const matchParticipa = !participaFil ||
+          (participaFil === "si" && r.participa) ||
+          (participaFil === "no" && !r.participa);
+        return matchTexto && matchEvento && matchParticipa;
+      });
+    }
+
+    /* ── Realtime ── */
+    supabase
+      .channel("admin_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "registro_eventos" },
+        async () => { await cargarDatos(); toast("↻ Lista actualizada"); })
+      .subscribe();
+
+    /* ── Init ── */
+    await cargarEventos();
+    await cargarDatos();
+
+  </script>
+</body>
+</html>
         <div class="bg-white p-4 rounded-xl shadow mb-4">
 
             <div class="flex justify-between">
