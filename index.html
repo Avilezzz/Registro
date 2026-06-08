@@ -44,9 +44,24 @@ id="curso"
 type="text"
 required
 class="w-full border rounded-lg p-3 mt-1"
-placeholder="Ej: TERCERO BGU A">
+placeholder="Ej: QUINTO A">
 </div>
+<div>
+    <label class="font-semibold">
+        Evento
+    </label>
 
+    <select
+        id="evento"
+        required
+        class="w-full border rounded-lg p-3 mt-1">
+
+        <option value="">
+            Seleccione un evento
+        </option>
+
+    </select>
+</div>
 <div>
 <label class="font-semibold">Número de Teléfono</label>
 <input
@@ -56,6 +71,7 @@ required
 class="w-full border rounded-lg p-3 mt-1"
 placeholder="0999999999">
 </div>
+
 
 <div class="flex items-center gap-3">
 <input
@@ -89,10 +105,48 @@ function limpiarTexto(texto){
         .toUpperCase();
 }
 
-document.getElementById('registroForm')
+async function cargarEventos(){
+
+    const { data, error } = await window.supabase
+        .from('eventos')
+        .select('*')
+        .order('nombre');
+
+    if(error){
+        console.error(error);
+        return;
+    }
+
+    const select = document.getElementById('evento');
+
+    select.innerHTML =
+        '<option value="">Seleccione un evento</option>';
+
+    data.forEach(evento => {
+
+        select.innerHTML += `
+            <option value="${evento.id}">
+                ${evento.nombre}
+            </option>
+        `;
+
+    });
+
+}
+
+await cargarEventos();
+
+document
+.getElementById('registroForm')
 .addEventListener('submit', async (e)=>{
 
     e.preventDefault();
+
+    const boton =
+        e.target.querySelector('button[type="submit"]');
+
+    boton.disabled = true;
+    boton.textContent = 'Guardando...';
 
     const nombre = limpiarTexto(
         document.getElementById('nombre').value
@@ -103,40 +157,66 @@ document.getElementById('registroForm')
     );
 
     const telefonoOriginal =
-        document.getElementById('telefono').value
+        document.getElementById('telefono')
+        .value
         .replace(/\D/g,'');
 
     const participa =
         document.getElementById('participa').checked;
 
+    const eventoId =
+        Number(
+            document.getElementById('evento').value
+        );
+
     const whatsappLink =
         `https://wa.me/593${telefonoOriginal.replace(/^0/,'')}`;
 
     const { error } = await window.supabase
-    .from('registro_eventos')
-    .insert([{
-        nombre_apellido: nombre,
-        participa: participa,
-        curso: curso,
-        telefono: telefonoOriginal,
-        whatsapp_link: whatsappLink
-    }]);
+        .from('registro_eventos')
+        .insert([{
 
-    const mensaje = document.getElementById('mensaje');
+            nombre_apellido: nombre,
+            participa: participa,
+            curso: curso,
+            telefono: telefonoOriginal,
+            whatsapp_link: whatsappLink,
+            evento_id: eventoId
+
+        }]);
+
+    const mensaje =
+        document.getElementById('mensaje');
 
     if(error){
-        mensaje.innerHTML =
-        `<span class="text-red-600">${error.message}</span>`;
+
+        mensaje.innerHTML = `
+            <div class="bg-red-100 text-red-700 p-3 rounded-lg">
+                ${error.message}
+            </div>
+        `;
+
+        boton.disabled = false;
+        boton.textContent = 'Registrar';
+
         return;
     }
 
-    mensaje.innerHTML =
-    `<span class="text-green-600 font-bold">Registro guardado correctamente</span>`;
+    mensaje.innerHTML = `
+        <div class="bg-green-100 text-green-700 p-3 rounded-lg">
+            Registro guardado correctamente
+        </div>
+    `;
 
-    document.getElementById('registroForm').reset();
+    document
+        .getElementById('registroForm')
+        .reset();
+
+    boton.disabled = false;
+    boton.textContent = 'Registrar';
+
 });
 
-</script>
-
+</script> 
 </body>
 </html>
