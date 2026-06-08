@@ -5,218 +5,340 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registro de Eventos</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 
+<style>
+  body { font-family: 'Sora', sans-serif; }
+
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+    padding: 2.25rem 2rem;
+    width: 100%;
+    max-width: 440px;
+  }
+
+  .input-field {
+    width: 100%;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-top: 0.35rem;
+    font-family: 'Sora', sans-serif;
+    font-size: 0.95rem;
+    color: #1e293b;
+    background: #f8fafc;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-field:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+    background: #fff;
+  }
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .btn-submit {
+    width: 100%;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+    padding: 0.85rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.01em;
+  }
+  .btn-submit:hover:not(:disabled) { opacity: 0.9; }
+  .btn-submit:active:not(:disabled) { transform: scale(0.98); }
+  .btn-submit:disabled { opacity: 0.65; cursor: not-allowed; }
+
+  /* Spinner dentro del botón */
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Email icon hint */
+  .input-wrap { position: relative; }
+  .input-wrap .icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+    font-size: 1rem;
+  }
+
+  /* Step indicator */
+  .step-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    display: inline-block;
+    margin: 0 3px;
+    transition: background 0.3s;
+  }
+  .step-dot.active { background: #3b82f6; }
+
+  /* Mensaje de éxito animado */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .msg-success {
+    animation: fadeUp 0.35s ease both;
+  }
+</style>
+
 <script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const supabaseUrl = 'https://mdcayyifejqfvvoiphmi.supabase.co';
-const supabaseKey = 'sb_publishable_lEzIrscGXzVAJ-c00FT2GQ_BMuHsVmK';
-
-window.supabase = createClient(supabaseUrl, supabaseKey);
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+  const supabaseUrl = 'https://mdcayyifejqfvvoiphmi.supabase.co';
+  const supabaseKey = 'sb_publishable_lEzIrscGXzVAJ-c00FT2GQ_BMuHsVmK';
+  window.supabase = createClient(supabaseUrl, supabaseKey);
 </script>
 </head>
 
-<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4"
+      style="background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 50%, #f0fdf4 100%);">
 
-<div class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-md">
+<div class="card">
 
-<h1 class="text-2xl font-bold text-center mb-6">
-Registro de Participantes
-</h1>
+  <!-- Header -->
+  <div class="text-center mb-6">
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3"
+         style="background: linear-gradient(135deg,#2563eb,#1d4ed8);">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold text-slate-800">Registro de Participantes</h1>
+    <p class="text-slate-500 text-sm mt-1">Recibirás una confirmación por correo</p>
+  </div>
 
-<form id="registroForm" class="space-y-4">
+  <form id="registroForm" class="space-y-4" novalidate>
 
-<div>
-<label class="font-semibold">Nombre y Apellido</label>
-<input
-id="nombre"
-type="text"
-required
-class="w-full border rounded-lg p-3 mt-1"
-placeholder="Nombre completo">
-</div>
+    <!-- Nombre -->
+    <div>
+      <label for="nombre">Nombre y Apellido</label>
+      <input id="nombre" type="text" required
+        class="input-field" placeholder="Ej: María García">
+    </div>
 
-<div>
-<label class="font-semibold">Curso</label>
-<input
-id="curso"
-type="text"
-required
-class="w-full border rounded-lg p-3 mt-1"
-placeholder="Ej: QUINTO A">
-</div>
-<div>
-    <label class="font-semibold">
-        Evento
-    </label>
+    <!-- Curso -->
+    <div>
+      <label for="curso">Curso</label>
+      <input id="curso" type="text" required
+        class="input-field" placeholder="Ej: QUINTO A">
+    </div>
 
-    <select
-        id="evento"
-        required
-        class="w-full border rounded-lg p-3 mt-1">
+    <!-- Evento -->
+    <div>
+      <label for="evento">Evento</label>
+      <select id="evento" required class="input-field">
+        <option value="">Seleccione un evento</option>
+      </select>
+    </div>
 
-        <option value="">
-            Seleccione un evento
-        </option>
+    <!-- Teléfono -->
+    <div>
+      <label for="telefono">Número de Teléfono</label>
+      <input id="telefono" type="tel" required
+        class="input-field" placeholder="0999999999">
+    </div>
 
-    </select>
-</div>
-<div>
-<label class="font-semibold">Número de Teléfono</label>
-<input
-id="telefono"
-type="tel"
-required
-class="w-full border rounded-lg p-3 mt-1"
-placeholder="0999999999">
-</div>
+    <!-- ✉️ CORREO ELECTRÓNICO (nuevo campo) -->
+    <div>
+      <label for="correo">Correo Electrónico</label>
+      <div class="input-wrap">
+        <input id="correo" type="email" required
+          class="input-field" placeholder="ejemplo@correo.com"
+          style="padding-right: 2.5rem;">
+        <span class="icon">✉️</span>
+      </div>
+      <p class="text-xs text-slate-400 mt-1 ml-1">
+        Se enviará una confirmación a este correo
+      </p>
+    </div>
 
+    <!-- Checkbox -->
+    <div class="flex items-start gap-3 p-3 rounded-xl"
+         style="background:#f0f9ff; border: 1px solid #bae6fd;">
+      <input id="participa" type="checkbox" checked
+        class="w-5 h-5 mt-0.5 accent-blue-600 cursor-pointer">
+      <label for="participa" class="font-normal text-slate-700 cursor-pointer leading-snug">
+        Confirmo que <strong>participaré</strong> en el evento seleccionado
+      </label>
+    </div>
 
-<div class="flex items-center gap-3">
-<input
-id="participa"
-type="checkbox"
-checked
-class="w-5 h-5">
-<label class="font-semibold">
-Confirmo que participaré en el evento
-</label>
-</div>
+    <!-- Botón -->
+    <button type="submit" class="btn-submit" id="btnSubmit">
+      Registrar
+    </button>
 
-<button
-type="submit"
-class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700">
-Registrar
-</button>
+  </form>
 
-</form>
-
-<div id="mensaje" class="mt-4 text-center"></div>
+  <div id="mensaje" class="mt-4 text-center"></div>
 
 </div>
 
 <script type="module">
 
-function limpiarTexto(texto){
-    return texto
-        .trim()
-        .replace(/\s+/g,' ')
-        .toUpperCase();
+function limpiarTexto(texto) {
+  return texto.trim().replace(/\s+/g, ' ').toUpperCase();
 }
 
-async function cargarEventos(){
+/* ── Cargar eventos ── */
+async function cargarEventos() {
+  const { data, error } = await window.supabase
+    .from('eventos')
+    .select('*')
+    .order('nombre');
 
-    const { data, error } = await window.supabase
-        .from('eventos')
-        .select('*')
-        .order('nombre');
+  if (error) { console.error(error); return; }
 
-    if(error){
-        console.error(error);
-        return;
-    }
+  const select = document.getElementById('evento');
+  select.innerHTML = '<option value="">Seleccione un evento</option>';
 
-    const select = document.getElementById('evento');
-
-    select.innerHTML =
-        '<option value="">Seleccione un evento</option>';
-
-    data.forEach(evento => {
-
-        select.innerHTML += `
-            <option value="${evento.id}">
-                ${evento.nombre}
-            </option>
-        `;
-
-    });
-
+  data.forEach(evento => {
+    const opt = document.createElement('option');
+    opt.value    = evento.id;
+    opt.dataset.nombre = evento.nombre;      // guardamos el nombre para el correo
+    opt.textContent    = evento.nombre;
+    select.appendChild(opt);
+  });
 }
 
 await cargarEventos();
 
-document
-.getElementById('registroForm')
-.addEventListener('submit', async (e)=>{
-
+/* ── Submit ── */
+document.getElementById('registroForm')
+  .addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const boton =
-        e.target.querySelector('button[type="submit"]');
-
+    const boton = document.getElementById('btnSubmit');
     boton.disabled = true;
-    boton.textContent = 'Guardando...';
+    boton.innerHTML = '<span class="spinner"></span>Guardando...';
 
-    const nombre = limpiarTexto(
-        document.getElementById('nombre').value
-    );
+    /* Recoger datos */
+    const nombre   = limpiarTexto(document.getElementById('nombre').value);
+    const curso    = limpiarTexto(document.getElementById('curso').value);
+    const correo   = document.getElementById('correo').value.trim().toLowerCase();
+    const telefono = document.getElementById('telefono').value.replace(/\D/g, '');
+    const participa = document.getElementById('participa').checked;
 
-    const curso = limpiarTexto(
-        document.getElementById('curso').value
-    );
+    const eventoSelect = document.getElementById('evento');
+    const eventoId     = Number(eventoSelect.value);
+    const eventoNombre = eventoSelect.options[eventoSelect.selectedIndex]?.dataset.nombre || '';
 
-    const telefonoOriginal =
-        document.getElementById('telefono')
-        .value
-        .replace(/\D/g,'');
+    const whatsappLink = `https://wa.me/593${telefono.replace(/^0/, '')}`;
 
-    const participa =
-        document.getElementById('participa').checked;
+    const mensaje = document.getElementById('mensaje');
 
-    const eventoId =
-        Number(
-            document.getElementById('evento').value
-        );
+    /* ── 1. Guardar en Supabase ── */
+    const { error: dbError } = await window.supabase
+      .from('registro_eventos')
+      .insert([{
+        nombre_apellido: nombre,
+        participa:       participa,
+        curso:           curso,
+        telefono:        telefono,
+        whatsapp_link:   whatsappLink,
+        evento_id:       eventoId,
+        correo:          correo          // nuevo campo
+      }]);
 
-    const whatsappLink =
-        `https://wa.me/593${telefonoOriginal.replace(/^0/,'')}`;
-
-    const { error } = await window.supabase
-        .from('registro_eventos')
-        .insert([{
-
-            nombre_apellido: nombre,
-            participa: participa,
-            curso: curso,
-            telefono: telefonoOriginal,
-            whatsapp_link: whatsappLink,
-            evento_id: eventoId
-
-        }]);
-
-    const mensaje =
-        document.getElementById('mensaje');
-
-    if(error){
-
-        mensaje.innerHTML = `
-            <div class="bg-red-100 text-red-700 p-3 rounded-lg">
-                ${error.message}
-            </div>
-        `;
-
-        boton.disabled = false;
-        boton.textContent = 'Registrar';
-
-        return;
+    if (dbError) {
+      mensaje.innerHTML = `
+        <div class="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-sm">
+          ❌ ${dbError.message}
+        </div>`;
+      boton.disabled  = false;
+      boton.innerHTML = 'Registrar';
+      return;
     }
 
+  /* ── 2. Llamar a Edge Function para enviar correo ── */
+try {
+
+  const { data: fnData, error: fnError } =
+    await window.supabase.functions.invoke(
+      'super-service',
+      {
+        body: {
+          nombre,
+          correo,
+          curso,
+          evento: eventoNombre,
+          participa
+        }
+      }
+    );
+
+  console.log("RESPUESTA FUNCTION:", fnData);
+
+  if (fnError) {
+
+    console.error("FN ERROR:", fnError);
+
+    const respuesta =
+      await fnError.context.text();
+
+    console.error("RESPUESTA SERVIDOR:", respuesta);
+
+    throw new Error(respuesta);
+
+  }
+
+} catch (err) {
+
+  console.error("ERROR COMPLETO:", err);
+
+  mensaje.innerHTML = `
+    <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm">
+      <strong>Error al enviar correo</strong><br>
+      ${err.message}
+    </div>
+  `;
+
+  boton.disabled = false;
+  boton.innerHTML = 'Registrar';
+
+  return;
+}
+
+    /* ── 3. Éxito total ── */
     mensaje.innerHTML = `
-        <div class="bg-green-100 text-green-700 p-3 rounded-lg">
-            Registro guardado correctamente
-        </div>
-    `;
+      <div class="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl text-sm msg-success">
+        <div class="font-bold text-base mb-1">✅ ¡Registro exitoso!</div>
+        <div>Se envió una confirmación a <strong>${correo}</strong></div>
+      </div>`;
 
-    document
-        .getElementById('registroForm')
-        .reset();
+    document.getElementById('registroForm').reset();
+    boton.disabled  = false;
+    boton.innerHTML = 'Registrar';
+  });
 
-    boton.disabled = false;
-    boton.textContent = 'Registrar';
-
-});
-
-</script> 
+</script>
 </body>
 </html>
