@@ -3,377 +3,228 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel de Administración</title>
+  <title>Panel de Administración | Dashboard</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Poppins', 'sans-serif'],
+            mono: ['Fira Code', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    :root {
-      --ink:    #0f1117;
-      --paper:  #f5f4f0;
-      --accent: #e84f27;
-      --muted:  #8b8b8b;
-      --border: #d9d8d4;
-      --green:  #1d7a4f;
-      --green-light: #e6f5ed;
+    /* Transiciones para Modal y Toast */
+    .modal-active {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+    .modal-active > div {
+      transform: scale(1) !important;
+      opacity: 1 !important;
+    }
+    
+    .toast-active {
+      transform: translateY(0) !important;
+      opacity: 1 !important;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--paper);
-      color: var(--ink);
-      min-height: 100vh;
-    }
-
-    /* ── Header ── */
-    header {
-      background: var(--ink);
-      color: #fff;
-      padding: 1.25rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    header h1 {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 1.1rem;
-      letter-spacing: 0.04em;
-    }
-    .live-dot {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.75rem;
-      color: #6ee7b7;
-      font-family: 'IBM Plex Mono', monospace;
-    }
-    .live-dot::before {
-      content: '';
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #6ee7b7;
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0%,100%{ opacity:1; transform:scale(1); }
-      50%     { opacity:.4; transform:scale(1.3); }
-    }
-
-    /* ── Layout ── */
-    main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
-
-    /* ── Stats ── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.75rem;
-    }
-    .stat-card {
-      background: #fff;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 1.25rem 1.5rem;
-      position: relative;
-      overflow: hidden;
-    }
-    .stat-card::after {
-      content: '';
-      position: absolute;
-      bottom: 0; left: 0;
-      height: 3px; width: 100%;
-      background: var(--accent);
-    }
-    .stat-card.green::after  { background: var(--green); }
-    .stat-card.gray::after   { background: var(--muted); }
-    .stat-label {
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-family: 'IBM Plex Mono', monospace;
-      margin-bottom: .5rem;
-    }
-    .stat-value {
-      font-size: 2.25rem;
-      font-weight: 700;
-      line-height: 1;
-      font-family: 'IBM Plex Mono', monospace;
-    }
-
-    /* ── Controls ── */
-    .controls {
-      background: #fff;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 1rem 1.25rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: .75rem;
-      align-items: center;
-      margin-bottom: 1.25rem;
-    }
-    .controls input,
-    .controls select {
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      padding: .55rem .9rem;
-      font-family: 'DM Sans', sans-serif;
-      font-size: .9rem;
-      color: var(--ink);
-      background: var(--paper);
-      outline: none;
-      transition: border-color .2s;
-      flex: 1;
-      min-width: 160px;
-    }
-    .controls input:focus,
-    .controls select:focus { border-color: var(--ink); }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: .4rem;
-      padding: .55rem 1.1rem;
-      border-radius: 8px;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 700;
-      font-size: .85rem;
-      cursor: pointer;
-      border: none;
-      transition: opacity .2s, transform .1s;
-      white-space: nowrap;
-    }
-    .btn:active { transform: scale(.97); }
-    .btn-red   { background: var(--accent); color: #fff; }
-    .btn-dark  { background: var(--ink);    color: #fff; }
-    .btn-green { background: var(--green);  color: #fff; }
-    .btn:hover { opacity: .88; }
-
-    /* ── Table ── */
-    .table-wrap {
-      background: #fff;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      overflow: auto;
-    }
-    table { width: 100%; border-collapse: collapse; }
-    thead tr {
-      background: var(--ink);
-      color: #fff;
-    }
-    th {
-      padding: .85rem 1rem;
-      text-align: left;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: .72rem;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-    td {
-      padding: .8rem 1rem;
-      font-size: .9rem;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-    }
-    tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover { background: #fafaf8; }
-
-    .badge {
-      display: inline-block;
-      padding: .2rem .6rem;
-      border-radius: 20px;
-      font-size: .75rem;
-      font-weight: 700;
-      font-family: 'IBM Plex Mono', monospace;
-    }
-    .badge-yes { background: var(--green-light); color: var(--green); }
-    .badge-no  { background: #f3f3f3;             color: var(--muted); }
-
-    .btn-wa {
-      display: inline-flex;
-      align-items: center;
-      gap: .3rem;
-      background: #25d366;
-      color: #fff;
-      padding: .3rem .75rem;
-      border-radius: 6px;
-      font-size: .8rem;
-      font-weight: 700;
-      text-decoration: none;
-      transition: opacity .2s;
-    }
-    .btn-wa:hover { opacity: .85; }
-
-    .btn-delete {
-      background: transparent;
-      border: 1.5px solid #fca5a5;
-      color: #dc2626;
-      padding: .3rem .65rem;
-      border-radius: 6px;
-      font-size: .8rem;
-      cursor: pointer;
-      transition: background .2s;
-    }
-    .btn-delete:hover { background: #fee2e2; }
-
-    .empty-row td {
-      text-align: center;
-      color: var(--muted);
-      padding: 3rem;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: .85rem;
-    }
-
-    /* ── Modal confirm ── */
-    #modal-overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.45);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 999;
-      opacity: 0; pointer-events: none;
-      transition: opacity .2s;
-    }
-    #modal-overlay.show { opacity: 1; pointer-events: all; }
-    .modal-box {
-      background: #fff;
-      border-radius: 14px;
-      padding: 2rem;
-      max-width: 360px;
-      width: 90%;
-      box-shadow: 0 20px 60px rgba(0,0,0,.2);
-      transform: translateY(12px);
-      transition: transform .2s;
-    }
-    #modal-overlay.show .modal-box { transform: translateY(0); }
-    .modal-box h3 {
-      font-weight: 700;
-      margin-bottom: .5rem;
-    }
-    .modal-box p { color: var(--muted); font-size: .9rem; margin-bottom: 1.5rem; }
-    .modal-actions { display: flex; gap: .75rem; justify-content: flex-end; }
-    .btn-cancel {
-      background: var(--paper);
-      border: 1.5px solid var(--border);
-      color: var(--ink);
-      padding: .55rem 1.1rem;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: .85rem;
-      cursor: pointer;
-    }
-
-    /* ── toast ── */
-    #toast {
-      position: fixed; bottom: 1.5rem; right: 1.5rem;
-      background: var(--ink); color: #fff;
-      padding: .75rem 1.25rem;
-      border-radius: 10px;
-      font-size: .85rem;
-      opacity: 0; pointer-events: none;
-      transition: opacity .3s;
-      z-index: 1000;
-      font-family: 'IBM Plex Mono', monospace;
-    }
-    #toast.show { opacity: 1; }
-
-    @media(max-width:640px){
-      th:nth-child(5), td:nth-child(5) { display:none; }
-      .stat-value { font-size: 1.75rem; }
-    }
+    /* Scrollbar personalizado para la tabla */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
 
-<body>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
 
-  <!-- Header -->
-  <header>
-    <h1>⚡ PANEL DE ADMINISTRACIÓN</h1>
-    <span class="live-dot">EN VIVO</span>
+  <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="bg-brand-600 text-white p-2 rounded-lg">
+          <i class="bi bi-lightning-charge-fill text-lg"></i>
+        </div>
+        <h1 class="font-bold text-lg tracking-tight text-slate-900">Panel Administrativo</h1>
+      </div>
+      <div class="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+        <span class="relative flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        </span>
+        <span class="text-xs font-semibold text-emerald-700 tracking-wide uppercase font-mono">En Vivo</span>
+      </div>
+    </div>
   </header>
 
-  <main>
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <!-- Stats -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">Total inscritos</div>
-        <div class="stat-value" id="statTotal">0</div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div class="absolute right-0 top-0 h-full w-2 bg-brand-500 rounded-r-2xl"></div>
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Inscritos</p>
+            <h3 class="text-4xl font-black text-slate-800 font-mono" id="statTotal">0</h3>
+          </div>
+          <div class="bg-brand-50 p-3 rounded-xl text-brand-600 group-hover:scale-110 transition-transform">
+            <i class="bi bi-people text-2xl"></i>
+          </div>
+        </div>
       </div>
-      <div class="stat-card green">
-        <div class="stat-label">Participan</div>
-        <div class="stat-value" id="statSi">0</div>
+      
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div class="absolute right-0 top-0 h-full w-2 bg-emerald-500 rounded-r-2xl"></div>
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Participan</p>
+            <h3 class="text-4xl font-black text-slate-800 font-mono" id="statSi">0</h3>
+          </div>
+          <div class="bg-emerald-50 p-3 rounded-xl text-emerald-600 group-hover:scale-110 transition-transform">
+            <i class="bi bi-person-check text-2xl"></i>
+          </div>
+        </div>
       </div>
-      <div class="stat-card gray">
-        <div class="stat-label">No participan</div>
-        <div class="stat-value" id="statNo">0</div>
+
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div class="absolute right-0 top-0 h-full w-2 bg-slate-400 rounded-r-2xl"></div>
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">No Participan</p>
+            <h3 class="text-4xl font-black text-slate-800 font-mono" id="statNo">0</h3>
+          </div>
+          <div class="bg-slate-100 p-3 rounded-xl text-slate-600 group-hover:scale-110 transition-transform">
+            <i class="bi bi-person-dash text-2xl"></i>
+          </div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Eventos activos</div>
-        <div class="stat-value" id="statEventos">0</div>
+
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div class="absolute right-0 top-0 h-full w-2 bg-purple-500 rounded-r-2xl"></div>
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Eventos Activos</p>
+            <h3 class="text-4xl font-black text-slate-800 font-mono" id="statEventos">0</h3>
+          </div>
+          <div class="bg-purple-50 p-3 rounded-xl text-purple-600 group-hover:scale-110 transition-transform">
+            <i class="bi bi-calendar-event text-2xl"></i>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Controls -->
-    <div class="controls">
-      <input type="text" id="buscar" placeholder="🔍  Buscar por nombre o curso…">
-      <select id="filtroEvento">
-        <option value="">Todos los eventos</option>
-      </select>
-      <select id="filtroParticipa">
-        <option value="">Todos</option>
-        <option value="si">Participan</option>
-        <option value="no">No participan</option>
-      </select>
-      <button class="btn btn-red"   id="btnPdf">⬇ PDF</button>
-      <button class="btn btn-green" id="btnXls">⬇ Excel</button>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+      
+      <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-1">
+        <div class="relative flex-1 sm:max-w-xs">
+          <i class="bi bi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+          <input type="text" id="buscar" placeholder="Buscar participante..." 
+            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+        </div>
+        
+        <div class="relative flex-1 sm:max-w-xs">
+          <i class="bi bi-funnel absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+          <select id="filtroEvento" class="w-full pl-10 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all cursor-pointer">
+            <option value="">Todos los eventos</option>
+          </select>
+          <i class="bi bi-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+        </div>
+
+        <div class="relative flex-1 sm:max-w-xs">
+          <i class="bi bi-check-circle absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+          <select id="filtroParticipa" class="w-full pl-10 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all cursor-pointer">
+            <option value="">Cualquier estado</option>
+            <option value="si">Participan</option>
+            <option value="no">No participan</option>
+          </select>
+          <i class="bi bi-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+        </div>
+      </div>
+
+      <div class="flex gap-3 w-full md:w-auto shrink-0">
+        <button id="btnPdf" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm shadow-rose-200 transition-all active:scale-95">
+          <i class="bi bi-file-earmark-pdf"></i> PDF
+        </button>
+        <button id="btnXls" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm shadow-emerald-200 transition-all active:scale-95">
+          <i class="bi bi-file-earmark-excel"></i> Excel
+        </button>
+      </div>
+
     </div>
 
-    <!-- Table -->
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nombre</th>
-            <th>Curso</th>
-            <th>Evento</th>
-            <th>Participa</th>
-            <th>Fecha</th>
-            <th>WhatsApp</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody id="tabla"></tbody>
-      </table>
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[800px]">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-semibold">
+              <th class="px-6 py-4">#</th>
+              <th class="px-6 py-4">Participante</th>
+              <th class="px-6 py-4">Curso</th>
+              <th class="px-6 py-4">Evento</th>
+              <th class="px-6 py-4">Estado</th>
+              <th class="px-6 py-4 hidden md:table-cell">Fecha</th>
+              <th class="px-6 py-4 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla" class="divide-y divide-slate-100">
+            </tbody>
+        </table>
+      </div>
     </div>
 
   </main>
 
-  <!-- Modal confirmación eliminación -->
-  <div id="modal-overlay">
-    <div class="modal-box">
-      <h3>¿Eliminar registro?</h3>
-      <p>Esta acción no se puede deshacer. El participante será removido permanentemente.</p>
-      <div class="modal-actions">
-        <button class="btn-cancel" id="btnCancelar">Cancelar</button>
-        <button class="btn btn-red" id="btnConfirmarEliminar">Eliminar</button>
+  <div id="modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 mx-4 transform scale-95 opacity-0 transition-all duration-300">
+      
+      <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 mx-auto">
+        <i class="bi bi-exclamation-triangle text-2xl text-red-600"></i>
+      </div>
+      
+      <h3 class="text-xl font-bold text-center text-slate-800 mb-2">¿Eliminar registro?</h3>
+      <p class="text-center text-slate-500 text-sm mb-6">Esta acción es irreversible. El participante será eliminado permanentemente del sistema.</p>
+      
+      <div class="flex gap-3">
+        <button id="btnCancelar" class="flex-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-semibold transition-colors">
+          Cancelar
+        </button>
+        <button id="btnConfirmarEliminar" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-sm shadow-red-200 transition-colors flex justify-center items-center gap-2">
+          <i class="bi bi-trash"></i> Eliminar
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Toast -->
-  <div id="toast"></div>
+  <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-medium">
+    <i id="toast-icon" class="bi bi-info-circle text-brand-400 text-lg"></i>
+    <span id="toast-msg">Notificación</span>
+  </div>
 
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -384,25 +235,26 @@
     );
 
     /* ── State ── */
-    let todos        = [];   // todos los registros con nombre de evento
-    let eventosMap   = {};   // id → nombre
+    let todos        = [];
+    let eventosMap   = {};
     let pendingDeleteId = null;
 
     /* ── Toast ── */
-    function toast(msg, ms = 2500) {
+    function toast(msg, iconClass = "bi-check-circle", ms = 3000) {
       const el = document.getElementById("toast");
-      el.textContent = msg;
-      el.classList.add("show");
-      setTimeout(() => el.classList.remove("show"), ms);
+      const icon = document.getElementById("toast-icon");
+      const text = document.getElementById("toast-msg");
+      
+      icon.className = `bi ${iconClass} text-brand-400 text-lg`;
+      text.textContent = msg;
+      
+      el.classList.add("toast-active");
+      setTimeout(() => el.classList.remove("toast-active"), ms);
     }
 
     /* ── Cargar eventos ── */
     async function cargarEventos() {
-      const { data } = await supabase
-        .from("eventos")
-        .select("*")
-        .order("nombre");
-
+      const { data } = await supabase.from("eventos").select("*").order("nombre");
       if (!data) return;
 
       eventosMap = {};
@@ -448,9 +300,7 @@
           r.nombre_apellido.toLowerCase().includes(buscar) ||
           r.curso.toLowerCase().includes(buscar);
 
-        const matchEvento = !eventoFil ||
-          String(r.evento_id) === String(eventoFil);
-
+        const matchEvento = !eventoFil || String(r.evento_id) === String(eventoFil);
         const matchParticipa = !participaFil ||
           (participaFil === "si" && r.participa) ||
           (participaFil === "no" && !r.participa);
@@ -467,75 +317,91 @@
 
       if (filtrados.length === 0) {
         tbody.innerHTML = `
-          <tr class="empty-row">
-            <td colspan="8">Sin resultados para los filtros aplicados</td>
+          <tr>
+            <td colspan="7" class="px-6 py-16 text-center text-slate-400">
+              <i class="bi bi-inbox text-5xl mb-3 block opacity-50"></i>
+              <p class="font-medium">No se encontraron resultados</p>
+              <p class="text-sm mt-1">Intenta ajustando los filtros de búsqueda</p>
+            </td>
           </tr>`;
         return;
       }
 
       tbody.innerHTML = filtrados.map((r, i) => `
-        <tr data-id="${r.id}">
-          <td style="color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:.8rem;">${i + 1}</td>
-          <td><strong>${r.nombre_apellido}</strong></td>
-          <td>${r.curso}</td>
-          <td>
-            <span style="
-              background:#f0f0ec;
-              border:1px solid var(--border);
-              border-radius:6px;
-              padding:.2rem .55rem;
-              font-size:.78rem;
-              font-family:'IBM Plex Mono',monospace;
-              white-space:nowrap;
-            ">${r.evento_nombre}</span>
+        <tr class="hover:bg-slate-50 transition-colors group">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400 font-mono">${i + 1}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center">
+              <div class="h-8 w-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-xs mr-3">
+                ${r.nombre_apellido.charAt(0).toUpperCase()}
+              </div>
+              <span class="font-semibold text-slate-800">${r.nombre_apellido}</span>
+            </div>
           </td>
-          <td>
-            <span class="badge ${r.participa ? 'badge-yes' : 'badge-no'}">
-              ${r.participa ? "✓ SÍ" : "✗ NO"}
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${r.curso}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+              <i class="bi bi-calendar2-event mr-1.5 opacity-60"></i> ${r.evento_nombre}
             </span>
           </td>
-          <td style="color:var(--muted); font-size:.82rem; font-family:'IBM Plex Mono',monospace; white-space:nowrap;">
-            ${new Date(r.created_at).toLocaleString("es-EC", {
-              day:"2-digit", month:"short", year:"numeric",
-              hour:"2-digit", minute:"2-digit"
-            })}
+          <td class="px-6 py-4 whitespace-nowrap">
+            ${r.participa 
+              ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
+                   <i class="bi bi-check2-circle mr-1 text-sm"></i> Sí participa
+                 </span>` 
+              : `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                   <i class="bi bi-x-circle mr-1 text-sm"></i> No participa
+                 </span>`
+            }
           </td>
-          <td>
-            <a href="${r.whatsapp_link}" target="_blank" class="btn-wa">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-              Chat
-            </a>
+          <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-500 font-mono hidden md:table-cell">
+            ${new Date(r.created_at).toLocaleString("es-EC", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" })}
           </td>
-          <td>
-            <button class="btn-delete" onclick="pedirEliminar(${r.id})">🗑</button>
+          <td class="px-6 py-4 whitespace-nowrap text-center">
+            <div class="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+              <a href="${r.whatsapp_link}" target="_blank" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors tooltip" title="WhatsApp">
+                <i class="bi bi-whatsapp"></i>
+              </a>
+              <button onclick="pedirEliminar(${r.id})" class="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors tooltip" title="Eliminar">
+                <i class="bi bi-trash3"></i>
+              </button>
+            </div>
           </td>
         </tr>
       `).join("");
     }
 
-    /* ── Eliminar ── */
+    /* ── Eliminar Modal Logic ── */
     window.pedirEliminar = function(id) {
       pendingDeleteId = id;
-      document.getElementById("modal-overlay").classList.add("show");
+      document.getElementById("modal-overlay").classList.add("modal-active");
     };
 
     document.getElementById("btnCancelar").addEventListener("click", () => {
       pendingDeleteId = null;
-      document.getElementById("modal-overlay").classList.remove("show");
+      document.getElementById("modal-overlay").classList.remove("modal-active");
     });
 
     document.getElementById("btnConfirmarEliminar").addEventListener("click", async () => {
       if (!pendingDeleteId) return;
+      
+      const btn = document.getElementById("btnConfirmarEliminar");
+      btn.innerHTML = '<i class="bi bi-hourglass-split animate-spin"></i> Eliminando...';
+      btn.disabled = true;
+
       const { error } = await supabase
         .from("registro_eventos")
         .delete()
         .eq("id", pendingDeleteId);
 
-      document.getElementById("modal-overlay").classList.remove("show");
+      document.getElementById("modal-overlay").classList.remove("modal-active");
       pendingDeleteId = null;
+      
+      btn.innerHTML = '<i class="bi bi-trash"></i> Eliminar';
+      btn.disabled = false;
 
-      if (error) { toast("❌ Error al eliminar"); return; }
-      toast("✓ Registro eliminado");
+      if (error) { toast("Error al eliminar el registro", "bi-x-circle text-rose-400"); return; }
+      toast("Registro eliminado exitosamente", "bi-check-circle text-emerald-400");
       await cargarDatos();
     });
 
@@ -544,6 +410,20 @@
       document.getElementById(id).addEventListener("input", renderizar);
       document.getElementById(id).addEventListener("change", renderizar);
     });
+
+    /* ── Helper Export ── */
+    function getFiltered() {
+      const buscar       = document.getElementById("buscar").value.toLowerCase();
+      const eventoFil    = document.getElementById("filtroEvento").value;
+      const participaFil = document.getElementById("filtroParticipa").value;
+
+      return todos.filter(r => {
+        const matchTexto = !buscar || r.nombre_apellido.toLowerCase().includes(buscar) || r.curso.toLowerCase().includes(buscar);
+        const matchEvento = !eventoFil || String(r.evento_id) === String(eventoFil);
+        const matchParticipa = !participaFil || (participaFil === "si" && r.participa) || (participaFil === "no" && !r.participa);
+        return matchTexto && matchEvento && matchParticipa;
+      });
+    }
 
     /* ── PDF ── */
     document.getElementById("btnPdf").addEventListener("click", () => {
@@ -563,9 +443,9 @@
 
       doc.autoTable({
         startY: 32,
-        styles: { font: "helvetica", fontSize: 8, cellPadding: 3 },
-        headStyles: { fillColor: [15,17,23], textColor: 255 },
-        alternateRowStyles: { fillColor: [245,244,240] },
+        styles: { font: "helvetica", fontSize: 8, cellPadding: 4 },
+        headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: 'bold' }, /* Brand Color */
+        alternateRowStyles: { fillColor: [248, 250, 252] },
         head: [["#","NOMBRE","CURSO","EVENTO","PARTICIPA","FECHA"]],
         body: visibles.map((r, i) => [
           i + 1,
@@ -577,7 +457,8 @@
         ])
       });
 
-      doc.save("participantes.pdf");
+      doc.save("Listado_Participantes.pdf");
+      toast("PDF descargado", "bi-file-earmark-pdf text-rose-400");
     });
 
     /* ── Excel ── */
@@ -596,31 +477,15 @@
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Participantes");
-      XLSX.writeFile(wb, "participantes.xlsx");
+      XLSX.writeFile(wb, "Listado_Participantes.xlsx");
+      toast("Excel descargado", "bi-file-earmark-excel text-emerald-400");
     });
-
-    function getFiltered() {
-      const buscar       = document.getElementById("buscar").value.toLowerCase();
-      const eventoFil    = document.getElementById("filtroEvento").value;
-      const participaFil = document.getElementById("filtroParticipa").value;
-
-      return todos.filter(r => {
-        const matchTexto = !buscar ||
-          r.nombre_apellido.toLowerCase().includes(buscar) ||
-          r.curso.toLowerCase().includes(buscar);
-        const matchEvento = !eventoFil || String(r.evento_id) === String(eventoFil);
-        const matchParticipa = !participaFil ||
-          (participaFil === "si" && r.participa) ||
-          (participaFil === "no" && !r.participa);
-        return matchTexto && matchEvento && matchParticipa;
-      });
-    }
 
     /* ── Realtime ── */
     supabase
       .channel("admin_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "registro_eventos" },
-        async () => { await cargarDatos(); toast("↻ Lista actualizada"); })
+        async () => { await cargarDatos(); toast("Datos actualizados en tiempo real", "bi-arrow-repeat text-brand-400"); })
       .subscribe();
 
     /* ── Init ── */
@@ -629,186 +494,4 @@
 
   </script>
 </body>
-</html>
-        <div class="bg-white p-4 rounded-xl shadow mb-4">
-
-            <div class="flex justify-between">
-
-                <span class="font-bold">
-                    Total inscritos:
-                </span>
-
-                <span id="totalParticipantes">
-                    0
-                </span>
-
-            </div>
-
-        </div>
-
-        <div class="bg-white rounded-xl shadow overflow-auto">
-
-            <table class="w-full">
-
-                <thead class="bg-slate-800 text-white">
-
-                    <tr>
-                        <th class="p-3 text-left">#</th>
-                        <th class="p-3 text-left">Nombre</th>
-                        <th class="p-3 text-left">Curso</th>
-                        <th class="p-3 text-left">Participa</th>
-                        <th class="p-3 text-left">Fecha</th>
-                        <th class="p-3 text-left">WhatsApp</th>
-                    </tr>
-
-                </thead>
-
-                <tbody id="tabla"></tbody>
-
-            </table>
-
-        </div>
-
-    </div>
-
-    <script type="module">
-
-        import { createClient }
-            from "https://esm.sh/@supabase/supabase-js@2";
-
-        const supabase = createClient(
-            "https://mdcayyifejqfvvoiphmi.supabase.co",
-            "sb_publishable_lEzIrscGXzVAJ-c00FT2GQ_BMuHsVmK"
-        );
-
-        let participantes = [];
-
-        async function cargarDatos() {
-
-            const { data, error } = await supabase
-                .from("registro_eventos")
-                .select("*")
-                .order("created_at", { ascending: false });
-
-            if (error) {
-                console.error(error);
-                return;
-            }
-
-            participantes = data || [];
-
-            document.getElementById("totalParticipantes")
-                .textContent = participantes.length;
-
-            document.getElementById("tabla").innerHTML =
-                participantes.map((item, index) => `
-
-                <tr class="border-b hover:bg-slate-50">
-
-                    <td class="p-3">${index + 1}</td>
-
-                    <td class="p-3 font-semibold">
-                        ${item.nombre_apellido}
-                    </td>
-
-                    <td class="p-3">
-                        ${item.curso}
-                    </td>
-
-                    <td class="p-3">
-                        ${item.participa ? "SI" : "NO"}
-                    </td>
-
-                    <td class="p-3">
-                        ${new Date(item.created_at).toLocaleString()}
-                    </td>
-
-                    <td class="p-3">
-
-                        <a
-                            href="${item.whatsapp_link}"
-                            target="_blank"
-                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg">
-
-                            WhatsApp
-
-                        </a>
-
-                    </td>
-
-                </tr>
-
-            `).join("");
-
-        }
-
-        await cargarDatos();
-
-        supabase
-            .channel("registro_eventos_realtime")
-            .on(
-                "postgres_changes",
-                {
-                    event: "*",
-                    schema: "public",
-                    table: "registro_eventos"
-                },
-                async () => {
-
-                    console.log("Actualización detectada");
-
-                    await cargarDatos();
-
-                }
-            )
-            .subscribe();
-
-        document
-            .getElementById("btnPdf")
-            .addEventListener("click", () => {
-
-                const { jsPDF } = window.jspdf;
-
-                const doc = new jsPDF();
-
-                doc.setFontSize(18);
-
-                doc.text(
-                    "LISTADO DE PARTICIPANTES",
-                    14,
-                    20
-                );
-
-                doc.autoTable({
-
-                    startY: 30,
-
-                    head: [[
-                        "#",
-                        "NOMBRE",
-                        "CURSO",
-                        "PARTICIPA",
-                        "FECHA"
-                    ]],
-
-                    body: participantes.map((item, index) => [
-
-                        index + 1,
-                        item.nombre_apellido,
-                        item.curso,
-                        item.participa ? "SI" : "NO",
-                        new Date(item.created_at).toLocaleString()
-
-                    ])
-
-                });
-
-                doc.save("participantes.pdf");
-
-            });
-
-    </script>
-
-</body>
-
 </html>
