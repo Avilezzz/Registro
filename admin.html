@@ -10,12 +10,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
-  
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <!-- html2canvas para exportar JPG -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <script>
     tailwind.config = {
@@ -40,26 +41,25 @@
   </script>
 
   <style>
-    /* Transiciones para Modal y Toast */
-    .modal-active {
-      opacity: 1 !important;
-      pointer-events: auto !important;
-    }
-    .modal-active > div {
-      transform: scale(1) !important;
-      opacity: 1 !important;
-    }
-    
-    .toast-active {
-      transform: translateY(0) !important;
-      opacity: 1 !important;
-    }
+    .modal-active { opacity: 1 !important; pointer-events: auto !important; }
+    .modal-active > div { transform: scale(1) !important; opacity: 1 !important; }
+    .toast-active { transform: translateY(0) !important; opacity: 1 !important; }
 
-    /* Scrollbar personalizado para la tabla */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Tabla oculta para captura JPG */
+    #tabla-captura-wrapper {
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      background: white;
+      padding: 24px;
+      font-family: 'Poppins', sans-serif;
+      min-width: 900px;
+    }
   </style>
 </head>
 
@@ -85,6 +85,7 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
+    <!-- Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
         <div class="absolute right-0 top-0 h-full w-2 bg-brand-500 rounded-r-2xl"></div>
@@ -98,7 +99,7 @@
           </div>
         </div>
       </div>
-      
+
       <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group hover:shadow-md transition-shadow">
         <div class="absolute right-0 top-0 h-full w-2 bg-emerald-500 rounded-r-2xl"></div>
         <div class="flex justify-between items-start">
@@ -139,15 +140,16 @@
       </div>
     </div>
 
+    <!-- Filtros y botones -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
-      
+
       <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-1">
         <div class="relative flex-1 sm:max-w-xs">
           <i class="bi bi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-          <input type="text" id="buscar" placeholder="Buscar participante..." 
+          <input type="text" id="buscar" placeholder="Buscar participante..."
             class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
         </div>
-        
+
         <div class="relative flex-1 sm:max-w-xs">
           <i class="bi bi-funnel absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
           <select id="filtroEvento" class="w-full pl-10 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all cursor-pointer">
@@ -174,10 +176,15 @@
         <button id="btnXls" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm shadow-emerald-200 transition-all active:scale-95">
           <i class="bi bi-file-earmark-excel"></i> Excel
         </button>
+        <!-- NUEVO: botón JPG -->
+        <button id="btnJpg" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm shadow-amber-200 transition-all active:scale-95">
+          <i class="bi bi-image"></i> JPG
+        </button>
       </div>
 
     </div>
 
+    <!-- Tabla principal -->
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse min-w-[800px]">
@@ -192,24 +199,43 @@
               <th class="px-6 py-4 text-center">Acciones</th>
             </tr>
           </thead>
-          <tbody id="tabla" class="divide-y divide-slate-100">
-            </tbody>
+          <tbody id="tabla" class="divide-y divide-slate-100"></tbody>
         </table>
       </div>
     </div>
 
   </main>
 
+  <!-- Tabla oculta solo para captura JPG (sin columna Acciones) -->
+  <div id="tabla-captura-wrapper">
+    <div style="margin-bottom:16px;">
+      <div style="font-size:18px;font-weight:700;color:#0f172a;">LISTADO DE PARTICIPANTES</div>
+      <div id="captura-subtitulo" style="font-size:11px;color:#64748b;margin-top:4px;"></div>
+    </div>
+    <table id="tabla-captura" style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="background:#0284c7;color:#fff;">
+          <th style="padding:10px 14px;text-align:left;">#</th>
+          <th style="padding:10px 14px;text-align:left;">NOMBRE</th>
+          <th style="padding:10px 14px;text-align:left;">CURSO</th>
+          <th style="padding:10px 14px;text-align:left;">EVENTO</th>
+          <th style="padding:10px 14px;text-align:left;">PARTICIPA</th>
+          <th style="padding:10px 14px;text-align:left;">FECHA</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-captura-body"></tbody>
+    </table>
+    <div style="margin-top:12px;font-size:10px;color:#94a3b8;">Generado: <span id="captura-fecha"></span></div>
+  </div>
+
+  <!-- Modal eliminar -->
   <div id="modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 mx-4 transform scale-95 opacity-0 transition-all duration-300">
-      
       <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 mx-auto">
         <i class="bi bi-exclamation-triangle text-2xl text-red-600"></i>
       </div>
-      
       <h3 class="text-xl font-bold text-center text-slate-800 mb-2">¿Eliminar registro?</h3>
       <p class="text-center text-slate-500 text-sm mb-6">Esta acción es irreversible. El participante será eliminado permanentemente del sistema.</p>
-      
       <div class="flex gap-3">
         <button id="btnCancelar" class="flex-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-semibold transition-colors">
           Cancelar
@@ -221,6 +247,7 @@
     </div>
   </div>
 
+  <!-- Toast -->
   <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-medium">
     <i id="toast-icon" class="bi bi-info-circle text-brand-400 text-lg"></i>
     <span id="toast-msg">Notificación</span>
@@ -234,20 +261,17 @@
       "sb_publishable_lEzIrscGXzVAJ-c00FT2GQ_BMuHsVmK"
     );
 
-    /* ── State ── */
-    let todos        = [];
-    let eventosMap   = {};
+    let todos      = [];
+    let eventosMap = {};
     let pendingDeleteId = null;
 
     /* ── Toast ── */
     function toast(msg, iconClass = "bi-check-circle", ms = 3000) {
-      const el = document.getElementById("toast");
+      const el   = document.getElementById("toast");
       const icon = document.getElementById("toast-icon");
       const text = document.getElementById("toast-msg");
-      
       icon.className = `bi ${iconClass} text-brand-400 text-lg`;
       text.textContent = msg;
-      
       el.classList.add("toast-active");
       setTimeout(() => el.classList.remove("toast-active"), ms);
     }
@@ -256,12 +280,9 @@
     async function cargarEventos() {
       const { data } = await supabase.from("eventos").select("*").order("nombre");
       if (!data) return;
-
       eventosMap = {};
       data.forEach(e => eventosMap[e.id] = e.nombre);
-
       document.getElementById("statEventos").textContent = data.length;
-
       const sel = document.getElementById("filtroEvento");
       sel.innerHTML = '<option value="">Todos los eventos</option>';
       data.forEach(e => {
@@ -278,37 +299,28 @@
         .from("registro_eventos")
         .select("*")
         .order("created_at", { ascending: false });
-
       if (error) { console.error(error); return; }
-
-      todos = (data || []).map(r => ({
-        ...r,
-        evento_nombre: eventosMap[r.evento_id] || "—"
-      }));
-
+      todos = (data || []).map(r => ({ ...r, evento_nombre: eventosMap[r.evento_id] || "—" }));
       renderizar();
     }
 
-    /* ── Filtrar + renderizar ── */
-    function renderizar() {
-      const buscar     = document.getElementById("buscar").value.toLowerCase();
-      const eventoFil  = document.getElementById("filtroEvento").value;
+    /* ── Helper: filtros activos ── */
+    function getFiltered() {
+      const buscar       = document.getElementById("buscar").value.toLowerCase();
+      const eventoFil    = document.getElementById("filtroEvento").value;
       const participaFil = document.getElementById("filtroParticipa").value;
-
-      const filtrados = todos.filter(r => {
-        const matchTexto = !buscar ||
-          r.nombre_apellido.toLowerCase().includes(buscar) ||
-          r.curso.toLowerCase().includes(buscar);
-
-        const matchEvento = !eventoFil || String(r.evento_id) === String(eventoFil);
-        const matchParticipa = !participaFil ||
-          (participaFil === "si" && r.participa) ||
-          (participaFil === "no" && !r.participa);
-
+      return todos.filter(r => {
+        const matchTexto    = !buscar || r.nombre_apellido.toLowerCase().includes(buscar) || r.curso.toLowerCase().includes(buscar);
+        const matchEvento   = !eventoFil || String(r.evento_id) === String(eventoFil);
+        const matchParticipa = !participaFil || (participaFil === "si" && r.participa) || (participaFil === "no" && !r.participa);
         return matchTexto && matchEvento && matchParticipa;
       });
+    }
 
-      /* Stats */
+    /* ── Renderizar tabla principal ── */
+    function renderizar() {
+      const filtrados = getFiltered();
+
       document.getElementById("statTotal").textContent = todos.length;
       document.getElementById("statSi").textContent    = todos.filter(r => r.participa).length;
       document.getElementById("statNo").textContent    = todos.filter(r => !r.participa).length;
@@ -345,13 +357,9 @@
             </span>
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
-            ${r.participa 
-              ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
-                   <i class="bi bi-check2-circle mr-1 text-sm"></i> Sí participa
-                 </span>` 
-              : `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                   <i class="bi bi-x-circle mr-1 text-sm"></i> No participa
-                 </span>`
+            ${r.participa
+              ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200"><i class="bi bi-check2-circle mr-1 text-sm"></i> Sí participa</span>`
+              : `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200"><i class="bi bi-x-circle mr-1 text-sm"></i> No participa</span>`
             }
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-500 font-mono hidden md:table-cell">
@@ -359,10 +367,10 @@
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-center">
             <div class="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-              <a href="${r.whatsapp_link}" target="_blank" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors tooltip" title="WhatsApp">
+              <a href="${r.whatsapp_link}" target="_blank" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors" title="WhatsApp">
                 <i class="bi bi-whatsapp"></i>
               </a>
-              <button onclick="pedirEliminar(${r.id})" class="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors tooltip" title="Eliminar">
+              <button onclick="pedirEliminar(${r.id})" class="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors" title="Eliminar">
                 <i class="bi bi-trash3"></i>
               </button>
             </div>
@@ -371,7 +379,7 @@
       `).join("");
     }
 
-    /* ── Eliminar Modal Logic ── */
+    /* ── Eliminar ── */
     window.pedirEliminar = function(id) {
       pendingDeleteId = id;
       document.getElementById("modal-overlay").classList.add("modal-active");
@@ -384,22 +392,14 @@
 
     document.getElementById("btnConfirmarEliminar").addEventListener("click", async () => {
       if (!pendingDeleteId) return;
-      
       const btn = document.getElementById("btnConfirmarEliminar");
       btn.innerHTML = '<i class="bi bi-hourglass-split animate-spin"></i> Eliminando...';
       btn.disabled = true;
-
-      const { error } = await supabase
-        .from("registro_eventos")
-        .delete()
-        .eq("id", pendingDeleteId);
-
+      const { error } = await supabase.from("registro_eventos").delete().eq("id", pendingDeleteId);
       document.getElementById("modal-overlay").classList.remove("modal-active");
       pendingDeleteId = null;
-      
       btn.innerHTML = '<i class="bi bi-trash"></i> Eliminar';
       btn.disabled = false;
-
       if (error) { toast("Error al eliminar el registro", "bi-x-circle text-rose-400"); return; }
       toast("Registro eliminado exitosamente", "bi-check-circle text-emerald-400");
       await cargarDatos();
@@ -411,40 +411,22 @@
       document.getElementById(id).addEventListener("change", renderizar);
     });
 
-    /* ── Helper Export ── */
-    function getFiltered() {
-      const buscar       = document.getElementById("buscar").value.toLowerCase();
-      const eventoFil    = document.getElementById("filtroEvento").value;
-      const participaFil = document.getElementById("filtroParticipa").value;
-
-      return todos.filter(r => {
-        const matchTexto = !buscar || r.nombre_apellido.toLowerCase().includes(buscar) || r.curso.toLowerCase().includes(buscar);
-        const matchEvento = !eventoFil || String(r.evento_id) === String(eventoFil);
-        const matchParticipa = !participaFil || (participaFil === "si" && r.participa) || (participaFil === "no" && !r.participa);
-        return matchTexto && matchEvento && matchParticipa;
-      });
-    }
-
-    /* ── PDF ── */
+    /* ── PDF (respeta filtros) ── */
     document.getElementById("btnPdf").addEventListener("click", () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "landscape" });
-
       doc.setFont("helvetica","bold");
       doc.setFontSize(16);
       doc.text("LISTADO DE PARTICIPANTES", 14, 18);
-
       doc.setFont("helvetica","normal");
       doc.setFontSize(9);
       doc.setTextColor(120);
       doc.text(`Generado: ${new Date().toLocaleString("es-EC")}`, 14, 25);
-
       const visibles = getFiltered();
-
       doc.autoTable({
         startY: 32,
         styles: { font: "helvetica", fontSize: 8, cellPadding: 4 },
-        headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: 'bold' }, /* Brand Color */
+        headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         head: [["#","NOMBRE","CURSO","EVENTO","PARTICIPA","FECHA"]],
         body: visibles.map((r, i) => [
@@ -456,29 +438,93 @@
           new Date(r.created_at).toLocaleString("es-EC")
         ])
       });
-
       doc.save("Listado_Participantes.pdf");
       toast("PDF descargado", "bi-file-earmark-pdf text-rose-400");
     });
 
-    /* ── Excel ── */
+    /* ── Excel (respeta filtros) ── */
     document.getElementById("btnXls").addEventListener("click", () => {
       const visibles = getFiltered();
       const ws = XLSX.utils.json_to_sheet(visibles.map((r, i) => ({
-        "#":          i + 1,
-        "Nombre":     r.nombre_apellido,
-        "Curso":      r.curso,
-        "Evento":     r.evento_nombre,
-        "Participa":  r.participa ? "SÍ" : "NO",
-        "Teléfono":   r.telefono,
-        "Fecha":      new Date(r.created_at).toLocaleString("es-EC"),
-        "WhatsApp":   r.whatsapp_link
+        "#":         i + 1,
+        "Nombre":    r.nombre_apellido,
+        "Curso":     r.curso,
+        "Evento":    r.evento_nombre,
+        "Participa": r.participa ? "SÍ" : "NO",
+        "Teléfono":  r.telefono,
+        "Fecha":     new Date(r.created_at).toLocaleString("es-EC"),
+        "WhatsApp":  r.whatsapp_link
       })));
-
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Participantes");
       XLSX.writeFile(wb, "Listado_Participantes.xlsx");
       toast("Excel descargado", "bi-file-earmark-excel text-emerald-400");
+    });
+
+    /* ── JPG (respeta filtros) ── */
+    document.getElementById("btnJpg").addEventListener("click", async () => {
+      const btn = document.getElementById("btnJpg");
+      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
+      btn.disabled = true;
+
+      const visibles = getFiltered();
+
+      // Construir subtítulo con los filtros activos
+      const buscarVal    = document.getElementById("buscar").value;
+      const eventoSel    = document.getElementById("filtroEvento");
+      const participaSel = document.getElementById("filtroParticipa");
+      const partes = [];
+      if (buscarVal)                          partes.push(`Búsqueda: "${buscarVal}"`);
+      if (eventoSel.value)                    partes.push(`Evento: ${eventoSel.options[eventoSel.selectedIndex].text}`);
+      if (participaSel.value)                 partes.push(`Estado: ${participaSel.options[participaSel.selectedIndex].text}`);
+      partes.push(`${visibles.length} registro(s)`);
+
+      document.getElementById("captura-subtitulo").textContent = partes.join("  ·  ");
+      document.getElementById("captura-fecha").textContent = new Date().toLocaleString("es-EC");
+
+      // Llenar tabla oculta
+      const capturaBody = document.getElementById("tabla-captura-body");
+      capturaBody.innerHTML = visibles.map((r, i) => `
+        <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;">${i + 1}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.nombre_apellido}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;">${r.curso}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;">${r.evento_nombre}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;">
+            <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;
+              background:${r.participa ? '#d1fae5' : '#f1f5f9'};
+              color:${r.participa ? '#065f46' : '#64748b'};">
+              ${r.participa ? 'SÍ' : 'NO'}
+            </span>
+          </td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;font-size:11px;color:#64748b;">
+            ${new Date(r.created_at).toLocaleString("es-EC", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" })}
+          </td>
+        </tr>
+      `).join("");
+
+      // Esperar render y capturar
+      await new Promise(r => setTimeout(r, 100));
+      const wrapper = document.getElementById("tabla-captura-wrapper");
+
+      try {
+        const canvas = await html2canvas(wrapper, {
+          scale: 2,
+          backgroundColor: "#ffffff",
+          logging: false
+        });
+        const link = document.createElement("a");
+        link.download = "Listado_Participantes.jpg";
+        link.href = canvas.toDataURL("image/jpeg", 0.95);
+        link.click();
+        toast("Imagen JPG descargada", "bi-image text-amber-400");
+      } catch (e) {
+        console.error(e);
+        toast("Error al generar la imagen", "bi-x-circle text-rose-400");
+      }
+
+      btn.innerHTML = '<i class="bi bi-image"></i> JPG';
+      btn.disabled = false;
     });
 
     /* ── Realtime ── */
