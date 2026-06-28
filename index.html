@@ -244,6 +244,18 @@
         <span class="field-msg" id="msg-curso"></span>
       </div>
 
+      <!-- Sexo -->
+      <div>
+        <label class="reg-label" for="sexo">Sexo</label>
+        <div class="input-wrap">
+          <select id="sexo" class="reg-input" style="padding-right:2.2rem;">
+            <option value="">Seleccione…</option>
+          </select>
+          <span class="inp-icon">▾</span>
+        </div>
+        <span class="field-msg" id="msg-sexo"></span>
+      </div>
+
       <!-- Evento -->
       <div>
         <label class="reg-label" for="evento">Evento</label>
@@ -294,6 +306,14 @@
     </div>
   </form>
 
+  <hr class="reg-divider">
+  <p style="text-align:center; font-size:.83rem; color:var(--slate-500); margin:0;">
+    ¿Ya estás registrado?
+    <a href="uniformes.html" style="color:var(--blue); font-weight:600; text-decoration:none;">
+      Registra tu camisa y talla →
+    </a>
+  </p>
+
 </div>
 
 <!-- ═══════════════════════════════════════════════════ -->
@@ -326,6 +346,7 @@ function toast(type, title, body = '', duration = 4500) {
 const rules = {
   nombre:   { min:3,  re: /^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s'-]{3,}$/, msg: 'Ingresa tu nombre completo (solo letras).' },
   curso:    { min:2,  re: /^[a-zA-Z0-9\s]+$/,                   msg: 'Curso inválido (letras y números).' },
+  sexo:     { msg: 'Selecciona el sexo.' },
   evento:   { msg: 'Selecciona un evento.' },
   telefono: { re: /^0[0-9]{9}$/, msg: 'Debe ser 10 dígitos, empezando en 0. Ej: 0999999999' },
   correo:   { re: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, msg: 'Ingresa un correo válido.' }
@@ -338,7 +359,7 @@ function validateField(id) {
   const r   = rules[id];
   let ok = true;
 
-  if (id === 'evento') {
+  if (id === 'evento' || id === 'sexo') {
     ok = val !== '';
   } else {
     if (!val) { ok = false; }
@@ -358,7 +379,7 @@ function validateField(id) {
   return ok;
 }
 
-['nombre','curso','evento','telefono','correo'].forEach(id => {
+['nombre','curso','sexo','evento','telefono','correo'].forEach(id => {
   const el = document.getElementById(id);
   el.addEventListener('blur', () => validateField(id));
   el.addEventListener('input', () => {
@@ -386,12 +407,29 @@ async function cargarEventos() {
 }
 await cargarEventos();
 
+/* ── Cargar sexos ── */
+async function cargarSexos() {
+  const { data, error } = await window.supabase
+    .from('sexos').select('*').order('id');
+
+  if (error) { toast('error','No se pudieron cargar los sexos', error.message); return; }
+
+  const sel = document.getElementById('sexo');
+  sel.innerHTML = '<option value="">Seleccione…</option>';
+  data.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id; o.textContent = s.nombre;
+    sel.appendChild(o);
+  });
+}
+await cargarSexos();
+
 /* ── Submit ── */
 document.getElementById('registroForm').addEventListener('submit', async e => {
   e.preventDefault();
 
   // Validar todos
-  const campos = ['nombre','curso','evento','telefono','correo'];
+  const campos = ['nombre','curso','sexo','evento','telefono','correo'];
   const validos = campos.map(validateField);
   if (validos.includes(false)) {
     toast('warning', 'Revisa el formulario', 'Hay campos con errores o vacíos.');
@@ -411,6 +449,7 @@ document.getElementById('registroForm').addEventListener('submit', async e => {
   const eventoSel    = document.getElementById('evento');
   const eventoId     = Number(eventoSel.value);
   const eventoNombre = eventoSel.options[eventoSel.selectedIndex]?.dataset.nombre || '';
+  const sexoId       = Number(document.getElementById('sexo').value);
   const whatsappLink = `https://wa.me/593${telefono.replace(/^0/,'')}`;
 
   /* 1 — Supabase */
@@ -423,6 +462,7 @@ document.getElementById('registroForm').addEventListener('submit', async e => {
       telefono,
       whatsapp_link: whatsappLink,
       evento_id:     eventoId,
+      sexo_id:       sexoId,
       correo
     }]);
 
@@ -455,7 +495,7 @@ document.getElementById('registroForm').addEventListener('submit', async e => {
   document.getElementById('registroForm').reset();
 
   // limpiar estados visuales
-  ['nombre','curso','evento','telefono','correo'].forEach(id => {
+  ['nombre','curso','sexo','evento','telefono','correo'].forEach(id => {
     const el = document.getElementById(id);
     el.classList.remove('is-valid-field','is-invalid-field');
     document.getElementById('msg-'+id).textContent = '';

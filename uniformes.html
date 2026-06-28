@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uniformes — Camisa y Talla</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+  window.supabase = createClient(
+    'https://mdcayyifejqfvvoiphmi.supabase.co',
+    'sb_publishable_lEzIrscGXzVAJ-c00FT2GQ_BMuHsVmK'
+  );
+</script>
+
+<style>
+  :root {
+    --blue:      #2563eb;
+    --blue-dark: #1d4ed8;
+    --blue-soft: #eff6ff;
+    --green:     #16a34a;
+    --red:       #dc2626;
+    --slate-800: #1e293b;
+    --slate-500: #64748b;
+    --slate-200: #e2e8f0;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(140deg, #eff6ff 0%, #dbeafe 45%, #f0fdf4 100%);
+    padding: 32px 16px;
+    color: var(--slate-800);
+  }
+
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .page-head {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 12px 48px rgba(37,99,235,.12), 0 2px 8px rgba(0,0,0,.06);
+    padding: 1.8rem 1.8rem 1.5rem;
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .head-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+    border-radius: 16px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+  }
+  .page-head h1 { font-size: 1.45rem; font-weight: 700; margin: 0 0 4px; }
+  .page-head p  { font-size: .85rem; color: var(--slate-500); margin: 0; }
+
+  .btn-registrarse {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 8px;
+    background: linear-gradient(135deg, var(--green), #15803d);
+    color: #fff; text-decoration: none;
+    padding: .6rem 1.2rem; border-radius: 12px;
+    font-weight: 700; font-size: .88rem;
+    box-shadow: 0 4px 14px rgba(22,163,74,.3);
+    transition: opacity .2s, transform .1s;
+  }
+  .btn-registrarse:hover  { opacity: .9; color: #fff; }
+  .btn-registrarse:active { transform: scale(.97); }
+
+  /* ── Barra de progreso ── */
+  .progress-block { margin-top: 18px; }
+  .progress-text {
+    font-size: .82rem; font-weight: 600; color: var(--slate-800);
+    margin-bottom: 7px;
+  }
+  .progress-text strong { color: var(--blue-dark); }
+  .progress-track {
+    width: 100%; height: 10px;
+    background: var(--slate-200); border-radius: 99px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, var(--blue), var(--green));
+    transition: width .5s cubic-bezier(.34,1.2,.64,1);
+  }
+
+  /* ── Search ── */
+  .search-box {
+    width: 100%;
+    border: 1.5px solid var(--slate-200);
+    border-radius: 13px;
+    padding: .8rem 1rem;
+    font-family: 'Sora', sans-serif;
+    font-size: .93rem;
+    background: #fff;
+    outline: none;
+    margin-bottom: 16px;
+    transition: border-color .18s, box-shadow .18s;
+  }
+  .search-box:focus { border-color: var(--blue); box-shadow: 0 0 0 3.5px rgba(37,99,235,.13); }
+
+  /* ── Person card ── */
+  .person {
+    background: #fff;
+    border: 1.5px solid var(--slate-200);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s, transform .1s;
+    margin-bottom: 10px;
+  }
+  .person:hover  { border-color: var(--blue); box-shadow: 0 6px 20px rgba(37,99,235,.12); }
+  .person:active { transform: scale(.99); }
+
+  .avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--blue-soft); color: var(--blue-dark);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; flex-shrink: 0;
+  }
+  .person-info { flex: 1; min-width: 0; }
+  .person-name { font-weight: 600; font-size: .98rem; }
+  .person-sub  { font-size: .78rem; color: var(--slate-500); }
+
+  .badge-state {
+    font-size: .72rem; font-weight: 600;
+    padding: 5px 10px; border-radius: 20px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .badge-pend { background: #fffbeb; color: #92400e; border: 1px solid #fcd34d; }
+  .badge-done { background: #f0fdf4; color: #14532d; border: 1px solid #86efac; }
+
+  .empty { text-align: center; color: var(--slate-500); padding: 40px 0; }
+
+  /* ── Inputs (modal) ── */
+  .reg-label {
+    font-size: .8rem; font-weight: 600; color: var(--slate-500);
+    text-transform: uppercase; letter-spacing: .5px;
+    margin-bottom: 5px; display: block;
+  }
+  .reg-input {
+    width: 100%;
+    border: 1.5px solid var(--slate-200);
+    border-radius: 11px;
+    padding: .72rem 1rem;
+    font-family: 'Sora', sans-serif;
+    font-size: .93rem; color: var(--slate-800);
+    background: #f8fafc; outline: none;
+    transition: border-color .18s, box-shadow .18s, background .18s;
+  }
+  .reg-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3.5px rgba(37,99,235,.13); background: #fff; }
+  .reg-input.is-valid-field   { border-color: #22c55e !important; background: #f0fdf4; }
+  .reg-input.is-invalid-field { border-color: var(--red) !important; background: #fff5f5; }
+  .field-msg { font-size: .75rem; margin-top: 4px; min-height: 16px; display: block; }
+  .field-msg.ok  { color: var(--green); }
+  .field-msg.err { color: var(--red); }
+
+  .btn-reg {
+    width: 100%;
+    background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+    color: #fff; padding: .85rem; border-radius: 13px;
+    font-weight: 700; font-size: 1rem; border: none; cursor: pointer;
+    transition: opacity .2s, transform .1s; box-shadow: 0 4px 14px rgba(37,99,235,.3);
+  }
+  .btn-reg:hover:not(:disabled)  { opacity: .9; }
+  .btn-reg:active:not(:disabled) { transform: scale(.98); }
+  .btn-reg:disabled { opacity: .6; cursor: not-allowed; }
+
+  .spinner-sm {
+    display: inline-block; width: 15px; height: 15px;
+    border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+    border-radius: 50%; animation: spin .65s linear infinite;
+    vertical-align: middle; margin-right: 7px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Locked box ── */
+  .locked-box {
+    background: var(--blue-soft); border: 1px solid #bfdbfe;
+    border-radius: 14px; padding: 16px; text-align: center;
+  }
+  .locked-box .lk-row { display: flex; justify-content: space-around; margin: 12px 0; }
+  .locked-box .lk-val { font-size: 1.6rem; font-weight: 700; color: var(--blue-dark); }
+  .locked-box .lk-lbl { font-size: .72rem; color: var(--slate-500); text-transform: uppercase; letter-spacing: .5px; }
+  .locked-note { font-size: .82rem; color: var(--slate-500); margin-top: 6px; }
+  .locked-sticker {
+    width: 120px; height: 120px; object-fit: contain;
+    margin: 0 auto 4px; display: block;
+    filter: drop-shadow(0 6px 12px rgba(37,99,235,.2));
+    animation: stickerPop .4s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  @keyframes stickerPop { from { opacity:0; transform: scale(.5); } to { opacity:1; transform: scale(1); } }
+
+  /* ── WhatsApp button ── */
+  .wa-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 14px;
+    background: #25d366; color: #fff;
+    padding: .7rem 1.2rem; border-radius: 12px;
+    font-weight: 700; font-size: .9rem; text-decoration: none;
+    box-shadow: 0 4px 14px rgba(37,211,102,.35);
+    transition: opacity .2s, transform .1s;
+  }
+  .wa-btn:hover  { opacity: .9; color: #fff; }
+  .wa-btn:active { transform: scale(.97); }
+
+  /* ── Camiseta interactiva ── */
+  .shirt-wrap { text-align: center; margin-bottom: 16px; }
+  .shirt-svg {
+    width: 170px; max-width: 60%; height: auto;
+    filter: drop-shadow(0 8px 16px rgba(37,99,235,.25));
+  }
+  .shirt-caption { font-size: .72rem; color: var(--slate-500); margin-top: 2px; }
+
+  /* ── Cuadrícula de números 0–100 ── */
+  .num-legend {
+    display: flex; gap: 16px; justify-content: center;
+    font-size: .72rem; color: var(--slate-500); margin-bottom: 8px;
+  }
+  .num-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .lg-dot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+  .lg-free { background: #bbf7d0; border: 1px solid #86efac; }
+  .lg-taken{ background: #fecaca; border: 1px solid #fca5a5; }
+  .lg-sel  { background: var(--blue); }
+
+  .num-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+    gap: 6px;
+    max-height: 184px; overflow-y: auto;
+    padding: 4px; margin-bottom: 6px;
+    border: 1.5px solid var(--slate-200); border-radius: 12px;
+    background: #f8fafc;
+  }
+  .num-chip {
+    border: 1.5px solid transparent; border-radius: 8px;
+    padding: 7px 0; text-align: center;
+    font-size: .82rem; font-weight: 600; font-family: 'Sora', sans-serif;
+    cursor: pointer; transition: transform .08s, background .15s;
+  }
+  .num-chip.free     { background: #f0fdf4; color: #14532d; border-color: #bbf7d0; }
+  .num-chip.free:hover  { background: #dcfce7; }
+  .num-chip.free:active { transform: scale(.92); }
+  .num-chip.taken    { background: #fef2f2; color: #b91c1c; border-color: #fecaca; cursor: not-allowed; text-decoration: line-through; opacity: .75; }
+  .num-chip.selected { background: var(--blue); color: #fff; border-color: var(--blue-dark); }
+
+  /* ── Opciones de pedido (radio cards) ── */
+  .pedido-opts { display: flex; gap: 10px; }
+  .pedido-opt {
+    flex: 1; cursor: pointer;
+    border: 1.5px solid var(--slate-200); border-radius: 12px;
+    padding: 12px 10px; text-align: center;
+    background: #f8fafc; transition: border-color .15s, background .15s, transform .08s;
+  }
+  .pedido-opt:hover { border-color: #bfdbfe; }
+  .pedido-opt:active { transform: scale(.98); }
+  .pedido-opt input { display: none; }
+  .pedido-opt .po-icon { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+  .pedido-opt .po-text { font-size: .82rem; font-weight: 600; color: var(--slate-800); }
+  .pedido-opt.sel { border-color: var(--blue); background: var(--blue-soft); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+
+  /* ── Toast ── */
+  #toastArea {
+    position: fixed; top: 20px; right: 20px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+  }
+  .toast-item {
+    min-width: 280px; max-width: 340px; border-radius: 14px; padding: 14px 18px;
+    font-size: .88rem; display: flex; align-items: flex-start; gap: 11px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.14); pointer-events: all;
+    animation: toastIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .toast-item.hide { animation: toastOut .3s ease forwards; }
+  .toast-success { background: #f0fdf4; border: 1.5px solid #86efac; color: #14532d; }
+  .toast-error   { background: #fff5f5; border: 1.5px solid #fca5a5; color: #7f1d1d; }
+  .toast-warning { background: #fffbeb; border: 1.5px solid #fcd34d; color: #78350f; }
+  .toast-icon { font-size: 1.15rem; flex-shrink: 0; margin-top: 1px; }
+  .toast-body { flex: 1; line-height: 1.45; }
+  .toast-body strong { display: block; font-size: .92rem; margin-bottom: 2px; }
+  @keyframes toastIn  { from { opacity:0; transform: translateX(30px) scale(.95); } to { opacity:1; transform: none; } }
+  @keyframes toastOut { from { opacity:1; transform: none; } to { opacity:0; transform: translateX(30px) scale(.95); } }
+
+  .modal-content { border: none; border-radius: 20px; }
+</style>
+</head>
+
+<body>
+
+<div id="toastArea"></div>
+
+<div class="wrap">
+
+  <div class="page-head">
+    <div class="head-icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
+      </svg>
+    </div>
+    <h1>Uniformes del Curso</h1>
+    <p>Toca tu nombre y registra tu <strong>número de camisa</strong> y tu <strong>talla</strong>.</p>
+    <p style="font-size:.8rem; color:var(--slate-500); margin:14px 0 0;">¿No te encuentras en la lista?</p>
+    <a href="index.html" class="btn-registrarse">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+      </svg>
+      Regístrate aquí
+    </a>
+
+    <div class="progress-block">
+      <div class="progress-text"><span id="progTexto">Cargando progreso…</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progFill" style="width:0%;"></div></div>
+    </div>
+  </div>
+
+  <input type="text" id="buscar" class="search-box" placeholder="🔍 Busca tu nombre...">
+
+  <div id="lista"><div class="empty">Cargando participantes…</div></div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalUniforme" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="modalTitulo">Uniforme</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+
+let participantes = [];
+let sexosMap = {};
+let modalSexoId = null;
+let modalBs;
+const WHATSAPP_ADMIN = '593967549140'; // sin el "+"
+
+/* ── Toast ── */
+function toast(type, title, body = '', duration = 4500) {
+  const icons = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+  const area  = document.getElementById('toastArea');
+  const el = document.createElement('div');
+  el.className = `toast-item toast-${type}`;
+  el.innerHTML = `
+    <span class="toast-icon">${icons[type]}</span>
+    <div class="toast-body"><strong>${title}</strong>${body || ''}</div>`;
+  area.appendChild(el);
+  setTimeout(() => { el.classList.add('hide'); setTimeout(() => el.remove(), 320); }, duration);
+}
+
+/* ── Escape para evitar romper el HTML ── */
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+/* ── Cargar datos: solo participantes (participa = true) ── */
+async function cargar() {
+  const [{ data: evs }, { data: sxs }, { data: regs, error }] = await Promise.all([
+    window.supabase.from('eventos').select('*'),
+    window.supabase.from('sexos').select('*'),
+    window.supabase.from('registro_eventos').select('*').eq('participa', true).order('nombre_apellido')
+  ]);
+
+  if (error) { toast('error', 'No se pudo cargar', error.message); return; }
+
+  const eventosMap = {};
+  (evs || []).forEach(e => eventosMap[e.id] = e.nombre);
+  sexosMap = {};
+  (sxs || []).forEach(s => sexosMap[s.id] = s.nombre);
+  participantes = (regs || []).map(r => ({ ...r, evento_nombre: eventosMap[r.evento_id] || '—' }));
+  actualizarProgreso();
+  render();
+  renderGrid(); // refresca la cuadrícula si el modal está abierto
+}
+
+/* ── Contador de progreso (sobre el total, no el filtrado por búsqueda) ── */
+function actualizarProgreso() {
+  const total    = participantes.length;
+  const enviados = participantes.filter(p => p.numero_camisa).length;
+  const pct      = total ? Math.round((enviados / total) * 100) : 0;
+
+  document.getElementById('progFill').style.width = pct + '%';
+  const texto = document.getElementById('progTexto');
+  texto.innerHTML = total
+    ? `<strong>${enviados}</strong> de <strong>${total}</strong> ya enviaron sus datos · ${pct}%`
+    : 'Aún no hay participantes registrados.';
+}
+
+/* ── Render lista ── */
+function render() {
+  const q = document.getElementById('buscar').value.trim().toLowerCase();
+  const lista = document.getElementById('lista');
+
+  const filtrados = participantes.filter(r =>
+    !q || r.nombre_apellido.toLowerCase().includes(q) || (r.curso || '').toLowerCase().includes(q));
+
+  if (filtrados.length === 0) {
+    lista.innerHTML = `<div class="empty">No se encontraron participantes.</div>`;
+    return;
+  }
+
+  lista.innerHTML = filtrados.map(r => {
+    const hecho = !!r.numero_camisa;
+    const badge = hecho
+      ? `<span class="badge-state badge-done">✓ Enviado</span>`
+      : `<span class="badge-state badge-pend">Pendiente</span>`;
+    return `
+      <div class="person" data-id="${r.id}">
+        <div class="avatar">${esc(r.nombre_apellido.charAt(0).toUpperCase())}</div>
+        <div class="person-info">
+          <div class="person-name">${esc(r.nombre_apellido)}</div>
+          <div class="person-sub">${esc(r.curso)} · ${esc(r.evento_nombre)}</div>
+        </div>
+        ${badge}
+      </div>`;
+  }).join('');
+
+  lista.querySelectorAll('.person').forEach(el =>
+    el.addEventListener('click', () => abrirModal(Number(el.dataset.id))));
+}
+
+/* ── Camiseta SVG ── */
+function shirtSVG() {
+  return `
+    <div class="shirt-wrap">
+      <svg viewBox="0 0 200 210" class="shirt-svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="jersey" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3b82f6"/>
+            <stop offset="1" stop-color="#1d4ed8"/>
+          </linearGradient>
+        </defs>
+        <path d="M75,30 C82,42 118,42 125,30 L152,40 L182,72 L162,100 L142,90 L142,188 L58,188 L58,90 L38,100 L18,72 L48,40 Z"
+              fill="url(#jersey)" stroke="#1e40af" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M75,30 C82,42 118,42 125,30 L118,30 C112,38 88,38 82,30 Z" fill="#1e3a8a"/>
+        <text id="shirtName"   x="100" y="78"  text-anchor="middle" fill="#ffffff" font-family="Sora, sans-serif" font-weight="700" font-size="15" letter-spacing="1"></text>
+        <text id="shirtNumber" x="100" y="158" text-anchor="middle" fill="#ffffff" font-family="Sora, sans-serif" font-weight="800" font-size="68"></text>
+      </svg>
+      <div class="shirt-caption">Vista previa de tu camiseta</div>
+    </div>`;
+}
+
+function actualizarShirt() {
+  const nombre = (document.getElementById('inpNombre')?.value || '').trim().toUpperCase().slice(0, 14);
+  const num    = (document.getElementById('inpCamisa')?.value || '').trim().toUpperCase().slice(0, 3);
+  const tName = document.getElementById('shirtName');
+  const tNum  = document.getElementById('shirtNumber');
+  if (tName) tName.textContent = nombre;
+  if (tNum)  tNum.textContent  = num;
+}
+
+/* ── Números de camisa ocupados (set normalizado) ── */
+function normNum(v) { return String(v ?? '').trim().toLowerCase(); }
+
+function numerosOcupados() {
+  // Ocupados SOLO dentro del mismo sexo del participante del modal
+  const set = new Set();
+  participantes.forEach(p => {
+    if (p.sexo_id !== modalSexoId) return;
+    const n = normNum(p.numero_camisa);
+    if (n) set.add(n);
+  });
+  return set;
+}
+
+/* ── Cuadrícula de números 0–100 ── */
+function renderGrid() {
+  const grid = document.getElementById('numGrid');
+  if (!grid) return;
+  const ocupados = numerosOcupados();
+  const sel = normNum(document.getElementById('inpCamisa')?.value);
+
+  const lbl = document.getElementById('numSexoLabel');
+  if (lbl) {
+    const nombreSexo = sexosMap[modalSexoId];
+    lbl.textContent = nombreSexo ? `Números para ${nombreSexo}` : 'Números disponibles';
+  }
+
+  let html = '';
+  for (let n = 0; n <= 100; n++) {
+    const key = String(n);
+    const taken = ocupados.has(key);
+    const isSel = !taken && sel === key;
+    const cls = taken ? 'taken' : (isSel ? 'free selected' : 'free');
+    html += `<div class="num-chip ${cls}" data-n="${key}" title="${taken ? 'Ocupado' : 'Disponible'}">${n}</div>`;
+  }
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.num-chip.free').forEach(chip =>
+    chip.addEventListener('click', () => {
+      const inp = document.getElementById('inpCamisa');
+      inp.value = chip.dataset.n;
+      actualizarShirt();
+      validar('inpCamisa', 'msgCamisa');
+      renderGrid();
+    }));
+}
+
+/* ── Abrir modal ── */
+function abrirModal(id) {
+  const r = participantes.find(p => p.id === id);
+  if (!r) return;
+
+  modalSexoId = r.sexo_id;
+  document.getElementById('modalTitulo').textContent = r.nombre_apellido;
+  const body = document.getElementById('modalBody');
+
+  if (r.numero_camisa) {
+    // Ya enviado: NO se muestran los datos (secreto). Solo confirmación + contacto.
+    body.innerHTML = `
+      <div class="locked-box">
+        <img src="417153432.png" alt="Enviado" class="locked-sticker">
+        <div style="font-weight:700;font-size:1.05rem;color:var(--blue-dark);margin:6px 0;">¡Datos enviados!</div>
+        <div class="locked-note">
+          Tu información ya fue registrada correctamente.<br>
+          Si deseas <strong>modificar algo</strong>, contacta al administrador:
+        </div>
+        <a href="https://wa.me/${WHATSAPP_ADMIN}" target="_blank" class="wa-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-1.607zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          Escribir por WhatsApp
+        </a>
+      </div>`;
+    modalBs.show();
+    return;
+  }
+
+  // Formulario para llenar (con camiseta interactiva)
+  body.innerHTML = `
+    ${shirtSVG()}
+    <div class="mb-3">
+      <label class="reg-label" for="inpNombre">Nombre en la camisa</label>
+      <input id="inpNombre" class="reg-input" maxlength="14" placeholder="Ej: Juan" autocomplete="off">
+      <span class="field-msg" id="msgNombre"></span>
+    </div>
+    <div class="mb-3">
+      <label class="reg-label" for="inpCamisa">Número de camisa</label>
+      <input id="inpCamisa" class="reg-input" maxlength="3" inputmode="numeric" placeholder="Toca un número disponible abajo" autocomplete="off">
+      <span class="field-msg" id="msgCamisa"></span>
+      <div id="numSexoLabel" style="text-align:center;font-size:.78rem;font-weight:700;color:var(--blue-dark);margin-top:8px;"></div>
+      <div class="num-legend" style="margin-top:6px;">
+        <span><i class="lg-dot lg-free"></i> Disponible</span>
+        <span><i class="lg-dot lg-taken"></i> Ocupado</span>
+        <span><i class="lg-dot lg-sel"></i> Tu número</span>
+      </div>
+      <div class="num-grid" id="numGrid"></div>
+    </div>
+    <div class="mb-3">
+      <label class="reg-label" for="inpTalla">Talla del uniforme</label>
+      <input id="inpTalla" class="reg-input" maxlength="20" placeholder="Ej: M, 38, Large" autocomplete="off">
+      <span class="field-msg" id="msgTalla"></span>
+    </div>
+    <div class="mb-3">
+      <label class="reg-label">¿Qué vas a mandar a hacer?</label>
+      <div class="pedido-opts">
+        <label class="pedido-opt" data-val="Equipo completo">
+          <input type="radio" name="tipoPedido" value="Equipo completo">
+          <span class="po-icon">👕🩳</span>
+          <span class="po-text">Equipo completo</span>
+        </label>
+        <label class="pedido-opt" data-val="Solo camisa">
+          <input type="radio" name="tipoPedido" value="Solo camisa">
+          <span class="po-icon">👕</span>
+          <span class="po-text">Solo camisa</span>
+        </label>
+      </div>
+      <span class="field-msg" id="msgPedido"></span>
+    </div>
+    <p style="font-size:.78rem;color:var(--slate-500);margin-bottom:14px;">
+      ⚠️ Al enviar, tus datos quedarán <strong>bloqueados</strong> y nadie más podrá cambiarlos.
+    </p>
+    <button class="btn-reg" id="btnGuardar">Enviar</button>`;
+
+  document.getElementById('inpNombre').addEventListener('input', actualizarShirt);
+  document.getElementById('inpCamisa').addEventListener('input', () => {
+    // solo dígitos
+    const inp = document.getElementById('inpCamisa');
+    inp.value = inp.value.replace(/\D/g, '').slice(0, 3);
+    actualizarShirt();
+    renderGrid();
+  });
+  document.querySelectorAll('.pedido-opt').forEach(opt =>
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.pedido-opt').forEach(o => o.classList.remove('sel'));
+      opt.classList.add('sel');
+      opt.querySelector('input').checked = true;
+      const msg = document.getElementById('msgPedido');
+      msg.textContent = '✓ Correcto'; msg.className = 'field-msg ok';
+    }));
+  document.getElementById('btnGuardar').addEventListener('click', () => guardar(id));
+  renderGrid();
+  modalBs.show();
+}
+
+/* ── Validación simple de no-vacío ── */
+function validar(inpId, msgId) {
+  const el = document.getElementById(inpId);
+  const msg = document.getElementById(msgId);
+  const ok = el.value.trim() !== '';
+  el.classList.toggle('is-valid-field', ok);
+  el.classList.toggle('is-invalid-field', !ok);
+  msg.textContent = ok ? '✓ Correcto' : 'Este campo es obligatorio.';
+  msg.className = 'field-msg ' + (ok ? 'ok' : 'err');
+  return ok;
+}
+
+/* ── Guardar ── */
+async function guardar(id) {
+  const okN = validar('inpNombre', 'msgNombre');
+  const okC = validar('inpCamisa', 'msgCamisa');
+  const okT = validar('inpTalla', 'msgTalla');
+  const pedidoSel = document.querySelector('input[name="tipoPedido"]:checked');
+  const okP = !!pedidoSel;
+  const msgP = document.getElementById('msgPedido');
+  msgP.textContent = okP ? '✓ Correcto' : 'Elige una opción.';
+  msgP.className = 'field-msg ' + (okP ? 'ok' : 'err');
+  if (!okN || !okC || !okT || !okP) { toast('warning', 'Faltan datos', 'Completa nombre, camisa, talla y el tipo de pedido.'); return; }
+
+  const nombreCamisa = document.getElementById('inpNombre').value.trim();
+  const camisa = document.getElementById('inpCamisa').value.trim();
+  const talla  = document.getElementById('inpTalla').value.trim();
+  const tipoPedido = pedidoSel.value;
+
+  // Verificar que el número no esté ocupado (control local + BD)
+  if (numerosOcupados().has(normNum(camisa))) {
+    document.getElementById('msgCamisa').textContent = 'Ese número ya está ocupado. Elige otro.';
+    document.getElementById('msgCamisa').className = 'field-msg err';
+    document.getElementById('inpCamisa').classList.add('is-invalid-field');
+    toast('warning', 'Número ocupado', `El número ${esc(camisa)} ya fue tomado. Elige otro disponible.`, 6000);
+    return;
+  }
+
+  const btn = document.getElementById('btnGuardar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-sm"></span>Enviando…';
+
+  // Solo pasa si la fila aun no tiene uniforme (lo impone la RLS).
+  const { data, error } = await window.supabase
+    .from('registro_eventos')
+    .update({ numero_camisa: camisa, talla, nombre_camisa: nombreCamisa, tipo_pedido: tipoPedido, uniforme_at: new Date().toISOString() })
+    .eq('id', id)
+    .is('numero_camisa', null)
+    .select();
+
+  if (error) {
+    // 23505 = violación de índice único → alguien tomó ese número primero
+    if (error.code === '23505') {
+      toast('error', 'Número ocupado', `El número ${esc(camisa)} acaba de ser tomado por otra persona. Elige otro.`, 7000);
+      await cargar();
+      renderGrid();
+    } else {
+      toast('error', 'No se pudo guardar', error.message, 6000);
+    }
+    btn.disabled = false; btn.innerHTML = 'Enviar';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    // La fila ya estaba bloqueada (alguien la llenó antes).
+    toast('warning', 'Ya estaba registrado', 'Este participante ya tenía uniforme. Contacta al administrador.', 6000);
+    modalBs.hide();
+    await cargar();
+    return;
+  }
+
+  toast('success', '¡Datos enviados!', 'Tu información quedó registrada. Para cambios, contacta al administrador.', 6000);
+  modalBs.hide();
+  await cargar();
+}
+
+/* ── Init ── */
+document.getElementById('buscar').addEventListener('input', render);
+
+window.addEventListener('DOMContentLoaded', async () => {
+  modalBs = new bootstrap.Modal(document.getElementById('modalUniforme'));
+  await cargar();
+
+  // Tiempo real: si alguien guarda, refresca la lista.
+  window.supabase
+    .channel('uniformes_realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'registro_eventos' }, cargar)
+    .subscribe();
+});
+</script>
+</body>
+</html>

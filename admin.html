@@ -195,6 +195,10 @@
               <th class="px-6 py-4">Curso</th>
               <th class="px-6 py-4">Evento</th>
               <th class="px-6 py-4">Estado</th>
+              <th class="px-6 py-4">Nombre Camisa</th>
+              <th class="px-6 py-4 text-center">Camisa</th>
+              <th class="px-6 py-4 text-center">Talla</th>
+              <th class="px-6 py-4">Pedido</th>
               <th class="px-6 py-4 hidden md:table-cell">Fecha</th>
               <th class="px-6 py-4 text-center">Acciones</th>
             </tr>
@@ -220,7 +224,10 @@
           <th style="padding:10px 14px;text-align:left;">CURSO</th>
           <th style="padding:10px 14px;text-align:left;">EVENTO</th>
           <th style="padding:10px 14px;text-align:left;">PARTICIPA</th>
-          <th style="padding:10px 14px;text-align:left;">FECHA</th>
+          <th style="padding:10px 14px;text-align:left;">NOMBRE CAMISA</th>
+          <th style="padding:10px 14px;text-align:left;">CAMISA</th>
+          <th style="padding:10px 14px;text-align:left;">TALLA</th>
+          <th style="padding:10px 14px;text-align:left;">PEDIDO</th>
         </tr>
       </thead>
       <tbody id="tabla-captura-body"></tbody>
@@ -242,6 +249,49 @@
         </button>
         <button id="btnConfirmarEliminar" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-sm shadow-red-200 transition-colors flex justify-center items-center gap-2">
           <i class="bi bi-trash"></i> Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal editar uniforme (override admin) -->
+  <div id="modal-uniforme" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 mx-4 transform scale-95 opacity-0 transition-all duration-300">
+      <div class="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center mb-4 mx-auto">
+        <i class="bi bi-pencil-square text-2xl text-brand-600"></i>
+      </div>
+      <h3 class="text-xl font-bold text-center text-slate-800 mb-1">Editar participante</h3>
+      <p id="uni-nombre" class="text-center text-slate-500 text-sm mb-4 font-semibold"></p>
+
+      <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Nombre y Apellido</label>
+      <input id="uni-nombre-apellido" type="text" maxlength="80" class="w-full mb-3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+
+      <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Curso</label>
+      <input id="uni-curso" type="text" maxlength="30" class="w-full mb-3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+
+      <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Nombre en la camisa</label>
+      <input id="uni-nombre-camisa" type="text" maxlength="14" class="w-full mb-3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+
+      <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">N° Camisa</label>
+      <input id="uni-camisa" type="text" maxlength="20" class="w-full mb-3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+
+      <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Talla</label>
+      <input id="uni-talla" type="text" maxlength="20" class="w-full mb-3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+
+      <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Pedido</label>
+      <select id="uni-pedido" class="w-full mb-3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all cursor-pointer">
+        <option value="">— Sin definir —</option>
+        <option value="Equipo completo">Equipo completo</option>
+        <option value="Solo camisa">Solo camisa</option>
+      </select>
+
+      <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Clave de administrador</label>
+      <input id="uni-pass" type="password" class="w-full mb-5 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all" placeholder="••••••••">
+
+      <div class="flex gap-3">
+        <button id="uni-cancelar" class="flex-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-semibold transition-colors">Cancelar</button>
+        <button id="uni-guardar" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-sm transition-colors flex justify-center items-center gap-2">
+          <i class="bi bi-check2"></i> Guardar
         </button>
       </div>
     </div>
@@ -330,7 +380,7 @@
       if (filtrados.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" class="px-6 py-16 text-center text-slate-400">
+            <td colspan="11" class="px-6 py-16 text-center text-slate-400">
               <i class="bi bi-inbox text-5xl mb-3 block opacity-50"></i>
               <p class="font-medium">No se encontraron resultados</p>
               <p class="text-sm mt-1">Intenta ajustando los filtros de búsqueda</p>
@@ -362,11 +412,32 @@
               : `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200"><i class="bi bi-x-circle mr-1 text-sm"></i> No participa</span>`
             }
           </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+            ${r.nombre_camisa || `<span class="text-slate-300">—</span>`}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+            ${r.numero_camisa
+              ? `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-100">${r.numero_camisa}</span>`
+              : `<span class="text-slate-300">—</span>`}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+            ${r.talla
+              ? `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100">${r.talla}</span>`
+              : `<span class="text-slate-300">—</span>`}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm">
+            ${r.tipo_pedido
+              ? `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${r.tipo_pedido === 'Solo camisa' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}">${r.tipo_pedido}</span>`
+              : `<span class="text-slate-300">—</span>`}
+          </td>
           <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-500 font-mono hidden md:table-cell">
             ${new Date(r.created_at).toLocaleString("es-EC", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" })}
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-center">
             <div class="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+              <button onclick="editarUniforme(${r.id})" class="p-2 text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors" title="Editar uniforme">
+                <i class="bi bi-pencil-square"></i>
+              </button>
               <a href="${r.whatsapp_link}" target="_blank" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors" title="WhatsApp">
                 <i class="bi bi-whatsapp"></i>
               </a>
@@ -405,6 +476,61 @@
       await cargarDatos();
     });
 
+    /* ── Editar uniforme (override admin vía RPC) ── */
+    let uniEditId = null;
+    window.editarUniforme = function(id) {
+      const r = todos.find(x => x.id === id);
+      if (!r) return;
+      uniEditId = id;
+      document.getElementById("uni-nombre").textContent = r.nombre_apellido;
+      document.getElementById("uni-nombre-apellido").value = r.nombre_apellido || "";
+      document.getElementById("uni-curso").value = r.curso || "";
+      document.getElementById("uni-nombre-camisa").value = r.nombre_camisa || "";
+      document.getElementById("uni-camisa").value = r.numero_camisa || "";
+      document.getElementById("uni-talla").value  = r.talla || "";
+      document.getElementById("uni-pedido").value = r.tipo_pedido || "";
+      document.getElementById("uni-pass").value   = "";
+      document.getElementById("modal-uniforme").classList.add("modal-active");
+    };
+
+    document.getElementById("uni-cancelar").addEventListener("click", () => {
+      uniEditId = null;
+      document.getElementById("modal-uniforme").classList.remove("modal-active");
+    });
+
+    document.getElementById("uni-guardar").addEventListener("click", async () => {
+      if (!uniEditId) return;
+      const nombreApellido = document.getElementById("uni-nombre-apellido").value.trim();
+      const curso = document.getElementById("uni-curso").value.trim();
+      const nombreCamisa = document.getElementById("uni-nombre-camisa").value.trim();
+      const camisa = document.getElementById("uni-camisa").value.trim();
+      const talla  = document.getElementById("uni-talla").value.trim();
+      const tipoPedido = document.getElementById("uni-pedido").value;
+      const pass   = document.getElementById("uni-pass").value;
+      if (!nombreApellido || !curso) { toast("Completa nombre y curso", "bi-exclamation-circle text-amber-400"); return; }
+      if (!pass)                     { toast("Ingresa la clave de administrador", "bi-shield-lock text-amber-400"); return; }
+
+      const btn = document.getElementById("uni-guardar");
+      btn.innerHTML = '<i class="bi bi-hourglass-split animate-spin"></i> Guardando...';
+      btn.disabled = true;
+
+      const { error } = await supabase.rpc("admin_set_uniforme", {
+        p_id: uniEditId, p_camisa: camisa, p_talla: talla, p_pass: pass,
+        p_nombre_camisa: nombreCamisa, p_nombre_apellido: nombreApellido, p_curso: curso,
+        p_tipo_pedido: tipoPedido
+      });
+
+      btn.innerHTML = '<i class="bi bi-check2"></i> Guardar';
+      btn.disabled = false;
+
+      if (error) { toast(error.message || "Error al guardar", "bi-x-circle text-rose-400"); return; }
+
+      document.getElementById("modal-uniforme").classList.remove("modal-active");
+      uniEditId = null;
+      toast("Uniforme actualizado", "bi-check-circle text-emerald-400");
+      await cargarDatos();
+    });
+
     /* ── Filtros reactivos ── */
     ["buscar","filtroEvento","filtroParticipa"].forEach(id => {
       document.getElementById(id).addEventListener("input", renderizar);
@@ -428,14 +554,17 @@
         styles: { font: "helvetica", fontSize: 8, cellPadding: 4 },
         headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 250, 252] },
-        head: [["#","NOMBRE","CURSO","EVENTO","PARTICIPA","FECHA"]],
+        head: [["#","NOMBRE","CURSO","EVENTO","PARTICIPA","NOMBRE CAMISA","CAMISA","TALLA","PEDIDO"]],
         body: visibles.map((r, i) => [
           i + 1,
           r.nombre_apellido,
           r.curso,
           r.evento_nombre,
           r.participa ? "SÍ" : "NO",
-          new Date(r.created_at).toLocaleString("es-EC")
+          r.nombre_camisa || "—",
+          r.numero_camisa || "—",
+          r.talla || "—",
+          r.tipo_pedido || "—"
         ])
       });
       doc.save("Listado_Participantes.pdf");
@@ -450,10 +579,13 @@
         "Nombre":    r.nombre_apellido,
         "Curso":     r.curso,
         "Evento":    r.evento_nombre,
-        "Participa": r.participa ? "SÍ" : "NO",
-        "Teléfono":  r.telefono,
-        "Fecha":     new Date(r.created_at).toLocaleString("es-EC"),
-        "WhatsApp":  r.whatsapp_link
+        "Participa":     r.participa ? "SÍ" : "NO",
+        "Nombre Camisa": r.nombre_camisa || "",
+        "N° Camisa":     r.numero_camisa || "",
+        "Talla":         r.talla || "",
+        "Pedido":        r.tipo_pedido || "",
+        "Teléfono":      r.telefono,
+        "WhatsApp":      r.whatsapp_link
       })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Participantes");
@@ -497,9 +629,10 @@
               ${r.participa ? 'SÍ' : 'NO'}
             </span>
           </td>
-          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;font-size:11px;color:#64748b;">
-            ${new Date(r.created_at).toLocaleString("es-EC", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" })}
-          </td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;">${r.nombre_camisa || '—'}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.numero_camisa || '—'}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.talla || '—'}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;">${r.tipo_pedido || '—'}</td>
         </tr>
       `).join("");
 
