@@ -321,6 +321,13 @@
 
   <input type="text" id="buscar" class="search-box" placeholder="🔍 Busca tu nombre...">
 
+  <div class="input-wrap" style="position:relative; margin-bottom:16px;">
+    <select id="filtroCurso" class="search-box" style="margin-bottom:0; padding-right:2.4rem; appearance:none; cursor:pointer;">
+      <option value="">Todos los cursos</option>
+    </select>
+    <span style="position:absolute; right:14px; top:50%; transform:translateY(-50%); pointer-events:none; color:#94a3b8;">▾</span>
+  </div>
+
   <div id="lista"><div class="empty">Cargando participantes…</div></div>
 
 </div>
@@ -380,9 +387,24 @@ async function cargar() {
   sexosMap = {};
   (sxs || []).forEach(s => sexosMap[s.id] = s.nombre);
   participantes = (regs || []).map(r => ({ ...r, evento_nombre: eventosMap[r.evento_id] || '—' }));
+  poblarFiltroCurso();
   actualizarProgreso();
   render();
   renderGrid(); // refresca la cuadrícula si el modal está abierto
+}
+
+/* ── Llenar el filtro de cursos dinámicamente (se llena solo con los cursos que existan) ── */
+function poblarFiltroCurso() {
+  const sel = document.getElementById('filtroCurso');
+  const actual = sel.value; // preservar selección
+  const cursos = [...new Set(participantes.map(p => (p.curso || '').trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'es'));
+
+  sel.innerHTML = '<option value="">Todos los cursos</option>' +
+    cursos.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+  // restaurar selección si sigue existiendo
+  if (cursos.includes(actual)) sel.value = actual;
 }
 
 /* ── Contador de progreso (sobre el total, no el filtrado por búsqueda) ── */
@@ -401,10 +423,14 @@ function actualizarProgreso() {
 /* ── Render lista ── */
 function render() {
   const q = document.getElementById('buscar').value.trim().toLowerCase();
+  const cursoFil = document.getElementById('filtroCurso').value;
   const lista = document.getElementById('lista');
 
-  const filtrados = participantes.filter(r =>
-    !q || r.nombre_apellido.toLowerCase().includes(q) || (r.curso || '').toLowerCase().includes(q));
+  const filtrados = participantes.filter(r => {
+    const matchTexto = !q || r.nombre_apellido.toLowerCase().includes(q) || (r.curso || '').toLowerCase().includes(q);
+    const matchCurso = !cursoFil || (r.curso || '').trim() === cursoFil;
+    return matchTexto && matchCurso;
+  });
 
   if (filtrados.length === 0) {
     lista.innerHTML = `<div class="empty">No se encontraron participantes.</div>`;
@@ -681,6 +707,7 @@ async function guardar(id) {
 
 /* ── Init ── */
 document.getElementById('buscar').addEventListener('input', render);
+document.getElementById('filtroCurso').addEventListener('change', render);
 
 window.addEventListener('DOMContentLoaded', async () => {
   modalBs = new bootstrap.Modal(document.getElementById('modalUniforme'));
