@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centro de Reportes</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        fontFamily: { sans: ['Plus Jakarta Sans','sans-serif'], mono: ['Fira Code','monospace'] },
+        colors: { ink:{900:'#1e1b4b',800:'#312e81',700:'#3730a3'}, iris:{50:'#eef2ff',100:'#e0e7ff',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca'} }
+      } }
+    }
+  </script>
+
+  <style>
+    body { background:
+      radial-gradient(1200px 500px at 100% -10%, #eef2ff 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% 0%, #faf5ff 0%, transparent 55%),
+      #f7f7fb; }
+    .toast-active { transform: translateY(0) !important; opacity: 1 !important; }
+    .glass { background: rgba(255,255,255,.75); backdrop-filter: blur(10px); }
+    .card-hover { transition: transform .2s, box-shadow .2s; }
+    .card-hover:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -18px rgba(79,70,229,.45); }
+    ::-webkit-scrollbar { width: 9px; height: 9px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #c7c9e0; border-radius: 6px; }
+    #tabla-captura-wrapper { position: fixed; left: -9999px; top: 0; background:#fff; padding:24px; font-family:'Plus Jakarta Sans',sans-serif; min-width:1000px; }
+    .btn-x { transition: transform .1s, filter .2s; }
+    .btn-x:hover { filter: brightness(1.07); }
+    .btn-x:active { transform: scale(.96); }
+  </style>
+</head>
+
+<body class="text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-iris-700 via-iris-600 to-violet-600"></div>
+    <div class="absolute -right-10 -top-16 w-72 h-72 bg-white/10 rounded-full blur-2xl"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-4">
+          <div class="bg-white/15 ring-1 ring-white/30 text-white p-3 rounded-2xl">
+            <i class="bi bi-clipboard-data text-2xl"></i>
+          </div>
+          <div>
+            <h1 class="text-white font-extrabold text-xl sm:text-2xl tracking-tight">Centro de Reportes</h1>
+            <p class="text-white/70 text-sm">Genera y descarga los listados de participantes</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 bg-white/15 ring-1 ring-white/25 px-3 py-1.5 rounded-full">
+          <i class="bi bi-shield-lock text-white/90"></i>
+          <span class="text-xs font-semibold text-white tracking-wide uppercase">Solo lectura</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 -mt-6">
+
+    <!-- Resumen -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="glass card-hover rounded-2xl p-5 border border-white shadow-sm">
+        <div class="flex items-center gap-2 text-iris-600 mb-2"><i class="bi bi-people-fill"></i><span class="text-xs font-bold uppercase tracking-wider text-slate-400">Registros</span></div>
+        <div class="text-3xl font-extrabold text-ink-900 font-mono" id="statTotal">0</div>
+      </div>
+      <div class="glass card-hover rounded-2xl p-5 border border-white shadow-sm">
+        <div class="flex items-center gap-2 text-emerald-600 mb-2"><i class="bi bi-check-circle-fill"></i><span class="text-xs font-bold uppercase tracking-wider text-slate-400">Participan</span></div>
+        <div class="text-3xl font-extrabold text-ink-900 font-mono" id="statParticipan">0</div>
+      </div>
+      <div class="glass card-hover rounded-2xl p-5 border border-white shadow-sm">
+        <div class="flex items-center gap-2 text-amber-600 mb-2"><i class="bi bi-bag-check-fill"></i><span class="text-xs font-bold uppercase tracking-wider text-slate-400">Uniformes</span></div>
+        <div class="text-3xl font-extrabold text-ink-900 font-mono" id="statUniformes">0</div>
+      </div>
+      <div class="glass card-hover rounded-2xl p-5 border border-white shadow-sm">
+        <div class="flex items-center gap-2 text-violet-600 mb-2"><i class="bi bi-mortarboard-fill"></i><span class="text-xs font-bold uppercase tracking-wider text-slate-400">Cursos</span></div>
+        <div class="text-3xl font-extrabold text-ink-900 font-mono" id="statCursos">0</div>
+      </div>
+    </div>
+
+    <!-- Filtros + acciones -->
+    <div class="glass rounded-2xl border border-white shadow-sm p-5 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div class="flex items-center gap-3 w-full md:w-auto flex-1">
+        <div class="relative flex-1 sm:max-w-xs">
+          <i class="bi bi-funnel-fill absolute left-3 top-1/2 -translate-y-1/2 text-iris-400"></i>
+          <select id="filtroCurso" class="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-iris-500 transition-all cursor-pointer font-medium">
+            <option value="">Todos los cursos</option>
+          </select>
+          <i class="bi bi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+        </div>
+        <span class="text-sm text-slate-500 whitespace-nowrap"><b id="contador" class="text-ink-900">0</b> resultado(s)</span>
+      </div>
+
+      <div class="flex gap-3 w-full md:w-auto shrink-0 flex-wrap">
+        <button id="btnPdf" class="btn-x flex-1 md:flex-none flex items-center justify-center gap-2 bg-rose-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-rose-200">
+          <i class="bi bi-file-earmark-pdf"></i> PDF
+        </button>
+        <button id="btnXls" class="btn-x flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-200">
+          <i class="bi bi-file-earmark-excel"></i> Excel
+        </button>
+        <button id="btnJpg" class="btn-x flex-1 md:flex-none flex items-center justify-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-amber-200">
+          <i class="bi bi-image"></i> JPG
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabla preview -->
+    <div class="glass border border-white rounded-2xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[900px]">
+          <thead>
+            <tr class="bg-iris-50/80 border-b border-iris-100 text-iris-700 text-xs uppercase tracking-wider font-bold">
+              <th class="px-5 py-4">#</th>
+              <th class="px-5 py-4">Participante</th>
+              <th class="px-5 py-4">Curso</th>
+              <th class="px-5 py-4">Evento</th>
+              <th class="px-5 py-4">Sexo</th>
+              <th class="px-5 py-4">Participa</th>
+              <th class="px-5 py-4">Nombre Camisa</th>
+              <th class="px-5 py-4 text-center">Camisa</th>
+              <th class="px-5 py-4 text-center">Talla</th>
+              <th class="px-5 py-4">Pedido</th>
+            </tr>
+          </thead>
+          <tbody id="tabla" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="text-center text-xs text-slate-400 mt-6">
+      <i class="bi bi-info-circle"></i> Esta vista es de solo consulta: no permite editar ni eliminar registros.
+    </p>
+  </main>
+
+  <!-- Tabla oculta para captura JPG -->
+  <div id="tabla-captura-wrapper">
+    <div style="margin-bottom:16px;">
+      <div style="font-size:18px;font-weight:800;color:#312e81;">LISTADO DE PARTICIPANTES</div>
+      <div id="captura-subtitulo" style="font-size:11px;color:#64748b;margin-top:4px;"></div>
+    </div>
+    <table id="tabla-captura" style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="background:#4f46e5;color:#fff;">
+          <th style="padding:10px 12px;text-align:left;">#</th>
+          <th style="padding:10px 12px;text-align:left;">NOMBRE</th>
+          <th style="padding:10px 12px;text-align:left;">CURSO</th>
+          <th style="padding:10px 12px;text-align:left;">EVENTO</th>
+          <th style="padding:10px 12px;text-align:left;">SEXO</th>
+          <th style="padding:10px 12px;text-align:left;">PARTICIPA</th>
+          <th style="padding:10px 12px;text-align:left;">NOMBRE CAMISA</th>
+          <th style="padding:10px 12px;text-align:left;">CAMISA</th>
+          <th style="padding:10px 12px;text-align:left;">TALLA</th>
+          <th style="padding:10px 12px;text-align:left;">PEDIDO</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-captura-body"></tbody>
+    </table>
+    <div style="margin-top:12px;font-size:10px;color:#94a3b8;">Generado: <span id="captura-fecha"></span></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-ink-900 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-medium">
+    <i id="toast-icon" class="bi bi-info-circle text-iris-400 text-lg"></i>
+    <span id="toast-msg">Notificación</span>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const supabase = createClient(
+      "https://mdcayyifejqfvvoiphmi.supabase.co",
+      "sb_publishable_lEzIrscGXzVAJ-c00FT2GQ_BMuHsVmK"
+    );
+
+    let todos = [], eventosMap = {}, sexosMap = {};
+
+    function toast(msg, iconClass = "bi-check-circle", ms = 3000) {
+      const el = document.getElementById("toast");
+      document.getElementById("toast-icon").className = `bi ${iconClass} text-iris-400 text-lg`;
+      document.getElementById("toast-msg").textContent = msg;
+      el.classList.add("toast-active");
+      setTimeout(() => el.classList.remove("toast-active"), ms);
+    }
+
+    async function cargarCatalogos() {
+      const [{ data: evs }, { data: sxs }] = await Promise.all([
+        supabase.from("eventos").select("*"),
+        supabase.from("sexos").select("*")
+      ]);
+      eventosMap = {}; (evs || []).forEach(e => eventosMap[e.id] = e.nombre);
+      sexosMap   = {}; (sxs || []).forEach(s => sexosMap[s.id]   = s.nombre);
+    }
+
+    async function cargarDatos() {
+      const { data, error } = await supabase
+        .from("registro_eventos").select("*").order("created_at", { ascending: false });
+      if (error) { toast("Error al cargar", "bi-x-circle text-rose-400"); return; }
+      todos = (data || []).map(r => ({
+        ...r,
+        evento_nombre: eventosMap[r.evento_id] || "—",
+        sexo_nombre:   sexosMap[r.sexo_id] || "—"
+      }));
+      poblarCursos();
+      render();
+    }
+
+    function poblarCursos() {
+      const sel = document.getElementById("filtroCurso");
+      const actual = sel.value;
+      const cursos = [...new Set(todos.map(r => (r.curso || "").trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, "es"));
+      sel.innerHTML = '<option value="">Todos los cursos</option>' +
+        cursos.map(c => `<option value="${c}">${c}</option>`).join("");
+      if (cursos.includes(actual)) sel.value = actual;
+      document.getElementById("statCursos").textContent = cursos.length;
+    }
+
+    function getFiltered() {
+      const curso = document.getElementById("filtroCurso").value;
+      return todos.filter(r => !curso || (r.curso || "").trim() === curso);
+    }
+
+    function render() {
+      const rows = getFiltered();
+      document.getElementById("contador").textContent      = rows.length;
+      document.getElementById("statTotal").textContent     = rows.length;
+      document.getElementById("statParticipan").textContent= rows.filter(r => r.participa).length;
+      document.getElementById("statUniformes").textContent = rows.filter(r => r.numero_camisa).length;
+
+      const tbody = document.getElementById("tabla");
+      if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="px-6 py-16 text-center text-slate-400">
+          <i class="bi bi-inbox text-5xl mb-3 block opacity-50"></i>
+          <p class="font-medium">No hay registros para este filtro</p></td></tr>`;
+        return;
+      }
+      const dash = `<span class="text-slate-300">—</span>`;
+      tbody.innerHTML = rows.map((r, i) => `
+        <tr class="hover:bg-iris-50/50 transition-colors">
+          <td class="px-5 py-3 text-sm text-slate-400 font-mono">${i + 1}</td>
+          <td class="px-5 py-3 font-semibold text-ink-900 whitespace-nowrap">${r.nombre_apellido}</td>
+          <td class="px-5 py-3 text-sm text-slate-600">${r.curso || dash}</td>
+          <td class="px-5 py-3 text-sm text-slate-600 whitespace-nowrap">${r.evento_nombre}</td>
+          <td class="px-5 py-3 text-sm text-slate-600">${r.sexo_nombre}</td>
+          <td class="px-5 py-3">
+            ${r.participa
+              ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">Sí</span>`
+              : `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">No</span>`}
+          </td>
+          <td class="px-5 py-3 text-sm text-slate-600">${r.nombre_camisa || dash}</td>
+          <td class="px-5 py-3 text-center text-sm">${r.numero_camisa
+              ? `<span class="inline-flex px-2.5 py-1 rounded-md text-xs font-bold bg-iris-50 text-iris-700 border border-iris-100">${r.numero_camisa}</span>` : dash}</td>
+          <td class="px-5 py-3 text-center text-sm">${r.talla
+              ? `<span class="inline-flex px-2.5 py-1 rounded-md text-xs font-bold bg-violet-50 text-violet-700 border border-violet-100">${r.talla}</span>` : dash}</td>
+          <td class="px-5 py-3 text-sm">${r.tipo_pedido
+              ? `<span class="inline-flex px-2.5 py-1 rounded-md text-xs font-medium ${r.tipo_pedido === 'Solo camisa' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}">${r.tipo_pedido}</span>` : dash}</td>
+        </tr>`).join("");
+    }
+
+    function subtituloFiltro(rows) {
+      const sel = document.getElementById("filtroCurso");
+      return [sel.value ? `Curso: ${sel.value}` : "Todos los cursos", `${rows.length} registro(s)`].join("  ·  ");
+    }
+    function sufijoArchivo() {
+      const c = document.getElementById("filtroCurso").value;
+      return c ? "_" + c.replace(/\s+/g, "_") : "";
+    }
+
+    /* ── PDF ── */
+    document.getElementById("btnPdf").addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "landscape" });
+      const rows = getFiltered();
+      doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+      doc.text("LISTADO DE PARTICIPANTES", 14, 18);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(120);
+      doc.text(subtituloFiltro(rows) + `  ·  Generado: ${new Date().toLocaleString("es-EC")}`, 14, 25);
+      doc.autoTable({
+        startY: 32,
+        styles: { font: "helvetica", fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [79,70,229], textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248,247,255] },
+        head: [["#","NOMBRE","CURSO","EVENTO","SEXO","PARTICIPA","NOMBRE CAMISA","CAMISA","TALLA","PEDIDO"]],
+        body: rows.map((r, i) => [
+          i + 1, r.nombre_apellido, r.curso, r.evento_nombre, r.sexo_nombre,
+          r.participa ? "SÍ" : "NO", r.nombre_camisa || "—", r.numero_camisa || "—",
+          r.talla || "—", r.tipo_pedido || "—"
+        ])
+      });
+      doc.save(`Reporte_Participantes${sufijoArchivo()}.pdf`);
+      toast("PDF descargado", "bi-file-earmark-pdf text-rose-400");
+    });
+
+    /* ── Excel ── */
+    document.getElementById("btnXls").addEventListener("click", () => {
+      const rows = getFiltered();
+      const ws = XLSX.utils.json_to_sheet(rows.map((r, i) => ({
+        "#": i + 1, "Nombre": r.nombre_apellido, "Curso": r.curso, "Evento": r.evento_nombre,
+        "Sexo": r.sexo_nombre, "Participa": r.participa ? "SÍ" : "NO",
+        "Nombre Camisa": r.nombre_camisa || "", "N° Camisa": r.numero_camisa || "",
+        "Talla": r.talla || "", "Pedido": r.tipo_pedido || "", "Teléfono": r.telefono
+      })));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Participantes");
+      XLSX.writeFile(wb, `Reporte_Participantes${sufijoArchivo()}.xlsx`);
+      toast("Excel descargado", "bi-file-earmark-excel text-emerald-400");
+    });
+
+    /* ── JPG ── */
+    document.getElementById("btnJpg").addEventListener("click", async () => {
+      const btn = document.getElementById("btnJpg");
+      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...'; btn.disabled = true;
+      const rows = getFiltered();
+      document.getElementById("captura-subtitulo").textContent = subtituloFiltro(rows);
+      document.getElementById("captura-fecha").textContent = new Date().toLocaleString("es-EC");
+      document.getElementById("tabla-captura-body").innerHTML = rows.map((r, i) => `
+        <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f7f7fb'};">
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${i + 1}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.nombre_apellido}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${r.curso || '—'}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${r.evento_nombre}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${r.sexo_nombre}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">
+            <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;
+              background:${r.participa ? '#d1fae5' : '#f1f5f9'};color:${r.participa ? '#065f46' : '#64748b'};">
+              ${r.participa ? 'SÍ' : 'NO'}</span>
+          </td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${r.nombre_camisa || '—'}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.numero_camisa || '—'}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.talla || '—'}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${r.tipo_pedido || '—'}</td>
+        </tr>`).join("");
+      await new Promise(r => setTimeout(r, 100));
+      try {
+        const canvas = await html2canvas(document.getElementById("tabla-captura-wrapper"), { scale: 2, backgroundColor: "#ffffff", logging: false });
+        const link = document.createElement("a");
+        link.download = `Reporte_Participantes${sufijoArchivo()}.jpg`;
+        link.href = canvas.toDataURL("image/jpeg", 0.95);
+        link.click();
+        toast("Imagen JPG descargada", "bi-image text-amber-400");
+      } catch (e) { console.error(e); toast("Error al generar la imagen", "bi-x-circle text-rose-400"); }
+      btn.innerHTML = '<i class="bi bi-image"></i> JPG'; btn.disabled = false;
+    });
+
+    document.getElementById("filtroCurso").addEventListener("change", render);
+
+    supabase.channel("reporte_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "registro_eventos" }, cargarDatos)
+      .subscribe();
+
+    await cargarCatalogos();
+    await cargarDatos();
+  </script>
+</body>
+</html>
