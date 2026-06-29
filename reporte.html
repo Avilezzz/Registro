@@ -133,6 +133,7 @@
               <th class="px-5 py-4 text-center">Camisa</th>
               <th class="px-5 py-4 text-center">Talla</th>
               <th class="px-5 py-4">Pedido</th>
+              <th class="px-5 py-4 text-center">Contacto</th>
             </tr>
           </thead>
           <tbody id="tabla" class="divide-y divide-slate-100"></tbody>
@@ -242,7 +243,7 @@
 
       const tbody = document.getElementById("tabla");
       if (rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="px-6 py-16 text-center text-slate-400">
+        tbody.innerHTML = `<tr><td colspan="11" class="px-6 py-16 text-center text-slate-400">
           <i class="bi bi-inbox text-5xl mb-3 block opacity-50"></i>
           <p class="font-medium">No hay registros para este filtro</p></td></tr>`;
         return;
@@ -267,7 +268,19 @@
               ? `<span class="inline-flex px-2.5 py-1 rounded-md text-xs font-bold bg-violet-50 text-violet-700 border border-violet-100">${r.talla}</span>` : dash}</td>
           <td class="px-5 py-3 text-sm">${r.tipo_pedido
               ? `<span class="inline-flex px-2.5 py-1 rounded-md text-xs font-medium ${r.tipo_pedido === 'Solo camisa' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}">${r.tipo_pedido}</span>` : dash}</td>
+          <td class="px-5 py-3 text-center">${waLink(r)
+              ? `<a href="${waLink(r)}" target="_blank" rel="noopener" title="Contactar por WhatsApp"
+                   class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"><i class="bi bi-whatsapp"></i></a>`
+              : `<span class="text-slate-300" title="Sin teléfono">—</span>`}</td>
         </tr>`).join("");
+    }
+
+    /* ── Enlace de WhatsApp (usa whatsapp_link o lo arma del teléfono) ── */
+    function waLink(r) {
+      if (r.whatsapp_link) return r.whatsapp_link;
+      const tel = (r.telefono || "").replace(/\D/g, "");
+      if (!tel) return "";
+      return `https://wa.me/593${tel.replace(/^0/, "")}`;
     }
 
     function subtituloFiltro(rows) {

@@ -18,6 +18,10 @@
   <!-- html2canvas para exportar JPG -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
+  <!-- EmailJS para recordatorios -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>emailjs.init("5tNGraAK_s0gjLTmU");</script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -180,6 +184,9 @@
         <button id="btnJpg" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm shadow-amber-200 transition-all active:scale-95">
           <i class="bi bi-image"></i> JPG
         </button>
+        <button id="btnCorreo" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm shadow-indigo-200 transition-all active:scale-95" title="Enviar recordatorio a participantes que no han llenado su uniforme">
+          <i class="bi bi-envelope-paper"></i> Recordatorio
+        </button>
       </div>
 
     </div>
@@ -297,6 +304,35 @@
     </div>
   </div>
 
+  <!-- Modal recordatorio por correo -->
+  <div id="modal-correo" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 mx-4 transform scale-95 opacity-0 transition-all duration-300">
+      <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mb-4 mx-auto">
+        <i class="bi bi-envelope-paper text-2xl text-indigo-600"></i>
+      </div>
+      <h3 class="text-xl font-bold text-center text-slate-800 mb-1">Recordatorios de uniforme</h3>
+      <p class="text-center text-slate-500 text-sm mb-4">
+        Participantes que aún <strong>no han llenado</strong> su uniforme.
+        Envía a <strong>uno</strong> o a <strong>todos</strong>.
+      </p>
+      <div class="flex items-center justify-between mb-2 px-1">
+        <span class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Pendientes con correo</span>
+        <span class="text-sm font-black text-indigo-600 font-mono" id="correo-count">0</span>
+      </div>
+
+      <!-- Lista de pendientes -->
+      <div id="correo-lista" class="max-h-72 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 mb-3"></div>
+
+      <p id="correo-progreso" class="text-center text-sm text-slate-500 mb-3 min-h-[20px]"></p>
+      <div class="flex gap-3">
+        <button id="correo-cancelar" class="flex-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-semibold transition-colors">Cerrar</button>
+        <button id="correo-enviar" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-sm transition-colors flex justify-center items-center gap-2">
+          <i class="bi bi-send"></i> Enviar a todos
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-medium">
     <i id="toast-icon" class="bi bi-info-circle text-brand-400 text-lg"></i>
@@ -314,6 +350,11 @@
     let todos      = [];
     let eventosMap = {};
     let pendingDeleteId = null;
+
+    /* ── Config EmailJS (recordatorio de uniforme) ── */
+    const EMAILJS_SERVICE_ID  = "service_xdg8iho";
+    const EMAILJS_TEMPLATE_RECORDATORIO = "template_y6vad69"; // plantilla de recordatorio
+    const UNIFORMES_URL = "https://registroevento.netlify.app/uniformes.html"; // enlace público a uniformes.html
 
     /* ── Toast ── */
     function toast(msg, iconClass = "bi-check-circle", ms = 3000) {
@@ -658,6 +699,155 @@
 
       btn.innerHTML = '<i class="bi bi-image"></i> JPG';
       btn.disabled = false;
+    });
+
+    /* ── Recordatorio por correo ── */
+    const reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const correoEnviados = new Set(); // ids ya enviados en esta sesión
+
+    // Participantes que SÍ participan, sin uniforme llenado y con correo válido
+    function pendientesParaCorreo() {
+      return todos.filter(r =>
+        r.participa && !r.numero_camisa && r.correo && reEmail.test(r.correo.trim()));
+    }
+
+    function configCorreoOk() {
+      if (EMAILJS_TEMPLATE_RECORDATORIO.startsWith("PEGA_AQUI") || UNIFORMES_URL.includes("PON-AQUI")) {
+        toast("Falta configurar el template y el enlace de uniformes", "bi-gear text-amber-400", 5000);
+        return false;
+      }
+      return true;
+    }
+
+    // Envío individual reutilizable
+    async function enviarCorreoA(r) {
+      return emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_RECORDATORIO, {
+        to_email: r.correo.trim(),
+        to_name:  r.nombre_apellido,
+        curso:    r.curso || "",
+        evento:   r.evento_nombre || "",
+        link:     UNIFORMES_URL
+      });
+    }
+
+    // Pinta una fila como enviado / error / normal
+    function marcarFila(id, estado) {
+      const fila = document.querySelector(`#correo-lista [data-fila="${id}"]`);
+      if (!fila) return;
+      const btn = fila.querySelector(".btn-enviar-uno");
+      const tag = fila.querySelector(".estado-uno");
+      if (estado === "enviando") {
+        btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+      } else if (estado === "ok") {
+        btn.classList.add("hidden");
+        tag.innerHTML = '<span class="text-emerald-600 text-xs font-semibold"><i class="bi bi-check-circle-fill"></i> Enviado</span>';
+      } else if (estado === "error") {
+        btn.disabled = false; btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Reintentar';
+        tag.innerHTML = '<span class="text-rose-600 text-xs font-semibold">Falló</span>';
+      }
+    }
+
+    function renderListaCorreo() {
+      const lista = document.getElementById("correo-lista");
+      const pendientes = pendientesParaCorreo();
+      document.getElementById("correo-count").textContent = pendientes.length;
+
+      if (pendientes.length === 0) {
+        lista.innerHTML = `<div class="px-4 py-8 text-center text-slate-400 text-sm">
+          <i class="bi bi-check2-all text-3xl block mb-2 opacity-60"></i>¡No hay pendientes con correo!</div>`;
+        document.getElementById("correo-enviar").disabled = true;
+        return;
+      }
+      document.getElementById("correo-enviar").disabled = false;
+
+      lista.innerHTML = pendientes.map(r => {
+        const yaEnviado = correoEnviados.has(r.id);
+        return `
+        <div class="flex items-center gap-3 px-3 py-2.5" data-fila="${r.id}">
+          <div class="h-8 w-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0">
+            ${r.nombre_apellido.charAt(0).toUpperCase()}
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-semibold text-slate-800 truncate">${r.nombre_apellido}</div>
+            <div class="text-xs text-slate-400 truncate">${r.correo} · ${r.curso || ""}</div>
+          </div>
+          <div class="estado-uno shrink-0">
+            ${yaEnviado ? '<span class="text-emerald-600 text-xs font-semibold"><i class="bi bi-check-circle-fill"></i> Enviado</span>' : ''}
+          </div>
+          <button class="btn-enviar-uno shrink-0 ${yaEnviado ? 'hidden' : ''} bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                  data-id="${r.id}" title="Enviar a ${r.nombre_apellido}">
+            <i class="bi bi-send"></i> Enviar
+          </button>
+        </div>`;
+      }).join("");
+
+      // Botón individual
+      lista.querySelectorAll(".btn-enviar-uno").forEach(btn =>
+        btn.addEventListener("click", async () => {
+          if (!configCorreoOk()) return;
+          const id = Number(btn.dataset.id);
+          const r = todos.find(x => x.id === id);
+          if (!r) return;
+          marcarFila(id, "enviando");
+          try {
+            await enviarCorreoA(r);
+            correoEnviados.add(id);
+            marcarFila(id, "ok");
+            toast(`Correo enviado a ${r.nombre_apellido}`, "bi-check-circle text-emerald-400");
+          } catch (e) {
+            console.error("EmailJS:", r.correo, e);
+            marcarFila(id, "error");
+            toast("No se pudo enviar", "bi-x-circle text-rose-400");
+          }
+        }));
+    }
+
+    document.getElementById("btnCorreo").addEventListener("click", () => {
+      document.getElementById("correo-progreso").textContent = "";
+      document.getElementById("correo-enviar").innerHTML = '<i class="bi bi-send"></i> Enviar a todos';
+      renderListaCorreo();
+      document.getElementById("modal-correo").classList.add("modal-active");
+    });
+
+    document.getElementById("correo-cancelar").addEventListener("click", () => {
+      document.getElementById("modal-correo").classList.remove("modal-active");
+    });
+
+    // Enviar a TODOS los que falten (omite los ya enviados en esta sesión)
+    document.getElementById("correo-enviar").addEventListener("click", async () => {
+      if (!configCorreoOk()) return;
+      const destinatarios = pendientesParaCorreo().filter(r => !correoEnviados.has(r.id));
+      if (destinatarios.length === 0) { toast("No quedan pendientes por enviar", "bi-info-circle"); return; }
+
+      const btn = document.getElementById("correo-enviar");
+      const prog = document.getElementById("correo-progreso");
+      btn.disabled = true;
+      document.getElementById("correo-cancelar").disabled = true;
+
+      let ok = 0, fail = 0;
+      for (let i = 0; i < destinatarios.length; i++) {
+        const r = destinatarios[i];
+        prog.textContent = `Enviando ${i + 1} de ${destinatarios.length}…`;
+        marcarFila(r.id, "enviando");
+        try {
+          await enviarCorreoA(r);
+          correoEnviados.add(r.id);
+          marcarFila(r.id, "ok");
+          ok++;
+        } catch (e) {
+          console.error("EmailJS:", r.correo, e);
+          marcarFila(r.id, "error");
+          fail++;
+        }
+        await new Promise(res => setTimeout(res, 600)); // evitar límite de tasa
+      }
+
+      prog.textContent = "";
+      document.getElementById("correo-cancelar").disabled = false;
+      btn.disabled = false;
+      document.getElementById("correo-count").textContent = pendientesParaCorreo().filter(r => !correoEnviados.has(r.id)).length;
+      toast(`Correos enviados: ${ok}${fail ? ` · fallidos: ${fail}` : ""}`,
+            fail ? "bi-exclamation-triangle text-amber-400" : "bi-check-circle text-emerald-400", 5000);
     });
 
     /* ── Realtime ── */
