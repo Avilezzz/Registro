@@ -165,6 +165,7 @@
           <th style="padding:10px 12px;text-align:left;">CAMISA</th>
           <th style="padding:10px 12px;text-align:left;">TALLA</th>
           <th style="padding:10px 12px;text-align:left;">PEDIDO</th>
+          <th style="padding:10px 12px;text-align:left;">OBSERVACIÓN</th>
         </tr>
       </thead>
       <tbody id="tabla-captura-body"></tbody>
@@ -312,11 +313,11 @@
         styles: { font: "helvetica", fontSize: 8, cellPadding: 3 },
         headStyles: { fillColor: [79,70,229], textColor: 255, fontStyle: "bold" },
         alternateRowStyles: { fillColor: [248,247,255] },
-        head: [["#","NOMBRE","CURSO","EVENTO","SEXO","PARTICIPA","NOMBRE CAMISA","CAMISA","TALLA","PEDIDO"]],
+        head: [["#","NOMBRE","CURSO","EVENTO","SEXO","PARTICIPA","NOMBRE CAMISA","CAMISA","TALLA","PEDIDO","OBSERVACIÓN"]],
         body: rows.map((r, i) => [
           i + 1, r.nombre_apellido, r.curso, r.evento_nombre, r.sexo_nombre,
           r.participa ? "SÍ" : "NO", nombreCamisaTexto(r), camisaTexto(r),
-          r.talla || "—", r.tipo_pedido || "—"
+          r.talla || "—", r.tipo_pedido || "—", r.observacion || "—"
         ])
       });
       doc.save(`Reporte_Participantes${sufijoArchivo()}.pdf`);
@@ -361,6 +362,7 @@
           <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;font-weight:600;">${camisaTexto(r)}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.talla || '—'}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${r.tipo_pedido || '—'}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${r.observacion || '—'}</td>
         </tr>`).join("");
       await new Promise(r => setTimeout(r, 100));
       try {

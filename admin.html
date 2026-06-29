@@ -245,6 +245,7 @@
           <th style="padding:10px 14px;text-align:left;">CAMISA</th>
           <th style="padding:10px 14px;text-align:left;">TALLA</th>
           <th style="padding:10px 14px;text-align:left;">PEDIDO</th>
+          <th style="padding:10px 14px;text-align:left;">OBSERVACIÓN</th>
         </tr>
       </thead>
       <tbody id="tabla-captura-body"></tbody>
@@ -719,7 +720,7 @@
         styles: { font: "helvetica", fontSize: 8, cellPadding: 4 },
         headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 250, 252] },
-        head: [["#","NOMBRE","CURSO","EVENTO","PARTICIPA","NOMBRE CAMISA","CAMISA","TALLA","PEDIDO"]],
+        head: [["#","NOMBRE","CURSO","EVENTO","PARTICIPA","NOMBRE CAMISA","CAMISA","TALLA","PEDIDO","OBSERVACIÓN"]],
         body: visibles.map((r, i) => [
           i + 1,
           r.nombre_apellido,
@@ -729,7 +730,8 @@
           nombreCamisaTexto(r),
           camisaTexto(r),
           r.talla || "—",
-          r.tipo_pedido || "—"
+          r.tipo_pedido || "—",
+          r.observacion || "—"
         ])
       });
       doc.save("Listado_Participantes.pdf");
@@ -799,6 +801,7 @@
           <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;font-weight:600;">${camisaTexto(r)}</td>
           <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.talla || '—'}</td>
           <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;">${r.tipo_pedido || '—'}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;">${r.observacion || '—'}</td>
         </tr>
       `).join("");
 
