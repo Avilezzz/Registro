@@ -17,6 +17,8 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <!-- html2canvas para exportar JPG -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <!-- PDF.js (legacy UMD) para previsualizar el PDF en cualquier navegador -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js"></script>
 
   <!-- EmailJS para recordatorios -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -393,6 +395,26 @@
     </div>
   </div>
 
+  <!-- Visor (PDF / Imagen) -->
+  <div id="visor" class="fixed inset-0 z-[60] hidden">
+    <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" id="visor-fondo"></div>
+    <div class="relative max-w-4xl mx-auto my-6 bg-white rounded-2xl shadow-2xl flex flex-col" style="max-height:92vh;">
+      <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+        <h3 id="visor-titulo" class="font-bold text-slate-800"><i class="bi bi-eye mr-1"></i> Vista previa</h3>
+        <button id="visor-cerrar-x" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
+      </div>
+      <div class="flex-1 overflow-auto bg-slate-100 p-4 text-center">
+        <div id="visor-pdf" class="flex flex-col items-center gap-4"></div>
+        <img id="visor-img" class="hidden mx-auto max-w-full rounded shadow" alt="Vista previa">
+        <div id="visor-cargando" class="hidden text-slate-500 py-10"><i class="bi bi-hourglass-split text-2xl"></i><p class="mt-2 text-sm">Generando vista previa…</p></div>
+      </div>
+      <div class="flex gap-3 px-5 py-3 border-t border-slate-200">
+        <button id="visor-cerrar" class="flex-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-semibold transition-colors">Cerrar</button>
+        <button id="visor-descargar" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl font-bold shadow-sm transition-colors flex items-center justify-center gap-2"><i class="bi bi-download"></i> Descargar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-medium">
     <i id="toast-icon" class="bi bi-info-circle text-brand-400 text-lg"></i>
@@ -703,8 +725,8 @@
       document.getElementById(id).addEventListener("change", renderizar);
     });
 
-    /* ── PDF (respeta filtros) ── */
-    document.getElementById("btnPdf").addEventListener("click", () => {
+    /* ── Construir PDF (devuelve el doc, sin descargar) ── */
+    function construirPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "landscape" });
       doc.setFont("helvetica","bold");
@@ -734,9 +756,9 @@
           r.observacion || "—"
         ])
       });
-      doc.save("Listado_Participantes.pdf");
-      toast("PDF descargado", "bi-file-earmark-pdf text-rose-400");
-    });
+      return doc;
+    }
+    document.getElementById("btnPdf").addEventListener("click", abrirVisorPDF);
 
     /* ── Excel (respeta filtros) ── */
     document.getElementById("btnXls").addEventListener("click", () => {
@@ -761,12 +783,8 @@
       toast("Excel descargado", "bi-file-earmark-excel text-emerald-400");
     });
 
-    /* ── JPG (respeta filtros) ── */
-    document.getElementById("btnJpg").addEventListener("click", async () => {
-      const btn = document.getElementById("btnJpg");
-      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
-      btn.disabled = true;
-
+    /* ── Construir imagen (devuelve dataURL) ── */
+    async function construirImagenDataURL() {
       const visibles = getFiltered();
 
       // Construir subtítulo con los filtros activos
@@ -808,26 +826,72 @@
       // Esperar render y capturar
       await new Promise(r => setTimeout(r, 100));
       const wrapper = document.getElementById("tabla-captura-wrapper");
+      const canvas = await html2canvas(wrapper, { scale: 2, backgroundColor: "#ffffff", logging: false });
+      return canvas.toDataURL("image/jpeg", 0.95);
+    }
+    document.getElementById("btnJpg").addEventListener("click", abrirVisorImagen);
+
+    /* ── Visor (PDF / Imagen) ── */
+    if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js";
+    let visorDescargaFn = null;
+
+    function cerrarVisor() {
+      document.getElementById("visor").classList.add("hidden");
+      document.getElementById("visor-pdf").innerHTML = "";
+      document.getElementById("visor-img").src = "";
+    }
+    document.getElementById("visor-cerrar").addEventListener("click", cerrarVisor);
+    document.getElementById("visor-cerrar-x").addEventListener("click", cerrarVisor);
+    document.getElementById("visor-fondo").addEventListener("click", cerrarVisor);
+    document.getElementById("visor-descargar").addEventListener("click", () => { if (visorDescargaFn) visorDescargaFn(); });
+
+    async function abrirVisorPDF() {
+      const cont = document.getElementById("visor-pdf");
+      const img = document.getElementById("visor-img");
+      cont.innerHTML = ""; img.classList.add("hidden");
+      document.getElementById("visor-titulo").innerHTML = '<i class="bi bi-file-earmark-pdf mr-1"></i> Vista previa — PDF';
+      document.getElementById("visor-cargando").classList.remove("hidden");
+      document.getElementById("visor").classList.remove("hidden");
+
+      let doc;
+      try { doc = construirPDF(); }
+      catch (e) { console.error(e); toast("Error al generar el PDF", "bi-x-circle text-rose-400"); cerrarVisor(); return; }
+      visorDescargaFn = () => { doc.save("Listado_Participantes.pdf"); toast("PDF descargado", "bi-file-earmark-pdf text-rose-400"); };
 
       try {
-        const canvas = await html2canvas(wrapper, {
-          scale: 2,
-          backgroundColor: "#ffffff",
-          logging: false
-        });
-        const link = document.createElement("a");
-        link.download = "Listado_Participantes.jpg";
-        link.href = canvas.toDataURL("image/jpeg", 0.95);
-        link.click();
-        toast("Imagen JPG descargada", "bi-image text-amber-400");
+        const data = doc.output("arraybuffer");
+        const pdf = await pdfjsLib.getDocument({ data }).promise;
+        for (let p = 1; p <= pdf.numPages; p++) {
+          const page = await pdf.getPage(p);
+          const viewport = page.getViewport({ scale: 1.5 });
+          const canvas = document.createElement("canvas");
+          canvas.width = viewport.width; canvas.height = viewport.height;
+          canvas.className = "bg-white shadow rounded max-w-full h-auto";
+          cont.appendChild(canvas);
+          await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+        }
       } catch (e) {
         console.error(e);
-        toast("Error al generar la imagen", "bi-x-circle text-rose-400");
+        cont.innerHTML = '<p class="text-slate-500 py-6">No se pudo mostrar la vista previa, pero puedes descargar el PDF.</p>';
       }
+      document.getElementById("visor-cargando").classList.add("hidden");
+    }
 
-      btn.innerHTML = '<i class="bi bi-image"></i> JPG';
-      btn.disabled = false;
-    });
+    async function abrirVisorImagen() {
+      const cont = document.getElementById("visor-pdf");
+      const img = document.getElementById("visor-img");
+      cont.innerHTML = ""; img.classList.add("hidden");
+      document.getElementById("visor-titulo").innerHTML = '<i class="bi bi-image mr-1"></i> Vista previa — Imagen';
+      document.getElementById("visor-cargando").classList.remove("hidden");
+      document.getElementById("visor").classList.remove("hidden");
+
+      let url;
+      try { url = await construirImagenDataURL(); }
+      catch (e) { console.error(e); toast("Error al generar la imagen", "bi-x-circle text-rose-400"); cerrarVisor(); return; }
+      img.src = url; img.classList.remove("hidden");
+      document.getElementById("visor-cargando").classList.add("hidden");
+      visorDescargaFn = () => { const a = document.createElement("a"); a.download = "Listado_Participantes.jpg"; a.href = url; a.click(); toast("Imagen descargada", "bi-image text-amber-400"); };
+    }
 
     /* ── Recordatorio por correo ── */
     const reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
