@@ -188,6 +188,10 @@
 
     let todos = [], eventosMap = {}, sexosMap = {};
 
+    /* ── Helpers de visualización ── */
+    function camisaTexto(r) { return r.numero_camisa ? r.numero_camisa : (r.sin_numero ? "Sin número" : "—"); }
+    function nombreCamisaTexto(r) { return r.nombre_camisa ? r.nombre_camisa : (r.sin_nombre ? "Sin nombre" : "—"); }
+
     function toast(msg, iconClass = "bi-check-circle", ms = 3000) {
       const el = document.getElementById("toast");
       document.getElementById("toast-icon").className = `bi ${iconClass} text-iris-400 text-lg`;
@@ -239,7 +243,7 @@
       document.getElementById("contador").textContent      = rows.length;
       document.getElementById("statTotal").textContent     = rows.length;
       document.getElementById("statParticipan").textContent= rows.filter(r => r.participa).length;
-      document.getElementById("statUniformes").textContent = rows.filter(r => r.numero_camisa).length;
+      document.getElementById("statUniformes").textContent = rows.filter(r => r.uniforme_at).length;
 
       const tbody = document.getElementById("tabla");
       if (rows.length === 0) {
@@ -261,9 +265,11 @@
               ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">Sí</span>`
               : `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">No</span>`}
           </td>
-          <td class="px-5 py-3 text-sm text-slate-600">${r.nombre_camisa || dash}</td>
+          <td class="px-5 py-3 text-sm text-slate-600">${r.nombre_camisa
+              ? r.nombre_camisa : (r.sin_nombre ? `<span class="text-xs italic text-slate-400">Sin nombre</span>` : dash)}</td>
           <td class="px-5 py-3 text-center text-sm">${r.numero_camisa
-              ? `<span class="inline-flex px-2.5 py-1 rounded-md text-xs font-bold bg-iris-50 text-iris-700 border border-iris-100">${r.numero_camisa}</span>` : dash}</td>
+              ? `<span class="inline-flex px-2.5 py-1 rounded-md text-xs font-bold bg-iris-50 text-iris-700 border border-iris-100">${r.numero_camisa}</span>`
+              : (r.sin_numero ? `<span class="text-xs italic text-slate-400">Sin número</span>` : dash)}</td>
           <td class="px-5 py-3 text-center text-sm">${r.talla
               ? `<span class="inline-flex px-2.5 py-1 rounded-md text-xs font-bold bg-violet-50 text-violet-700 border border-violet-100">${r.talla}</span>` : dash}</td>
           <td class="px-5 py-3 text-sm">${r.tipo_pedido
@@ -309,7 +315,7 @@
         head: [["#","NOMBRE","CURSO","EVENTO","SEXO","PARTICIPA","NOMBRE CAMISA","CAMISA","TALLA","PEDIDO"]],
         body: rows.map((r, i) => [
           i + 1, r.nombre_apellido, r.curso, r.evento_nombre, r.sexo_nombre,
-          r.participa ? "SÍ" : "NO", r.nombre_camisa || "—", r.numero_camisa || "—",
+          r.participa ? "SÍ" : "NO", nombreCamisaTexto(r), camisaTexto(r),
           r.talla || "—", r.tipo_pedido || "—"
         ])
       });
@@ -323,8 +329,8 @@
       const ws = XLSX.utils.json_to_sheet(rows.map((r, i) => ({
         "#": i + 1, "Nombre": r.nombre_apellido, "Curso": r.curso, "Evento": r.evento_nombre,
         "Sexo": r.sexo_nombre, "Participa": r.participa ? "SÍ" : "NO",
-        "Nombre Camisa": r.nombre_camisa || "", "N° Camisa": r.numero_camisa || "",
-        "Talla": r.talla || "", "Pedido": r.tipo_pedido || "", "Teléfono": r.telefono
+        "Nombre Camisa": nombreCamisaTexto(r), "N° Camisa": camisaTexto(r),
+        "Talla": r.talla || "", "Pedido": r.tipo_pedido || "", "Observación": r.observacion || "", "Teléfono": r.telefono
       })));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Participantes");
@@ -351,8 +357,8 @@
               background:${r.participa ? '#d1fae5' : '#f1f5f9'};color:${r.participa ? '#065f46' : '#64748b'};">
               ${r.participa ? 'SÍ' : 'NO'}</span>
           </td>
-          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${r.nombre_camisa || '—'}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.numero_camisa || '—'}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${nombreCamisaTexto(r)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;font-weight:600;">${camisaTexto(r)}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.talla || '—'}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">${r.tipo_pedido || '—'}</td>
         </tr>`).join("");

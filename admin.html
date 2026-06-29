@@ -77,12 +77,19 @@
         </div>
         <h1 class="font-bold text-lg tracking-tight text-slate-900">Panel Administrativo</h1>
       </div>
-      <div class="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-        <span class="relative flex h-2.5 w-2.5">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-        </span>
-        <span class="text-xs font-semibold text-emerald-700 tracking-wide uppercase font-mono">En Vivo</span>
+      <div class="flex items-center gap-3">
+        <button id="switchEdicion" type="button" title="Permitir que los participantes editen su uniforme (con su código)"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors bg-slate-50 border-slate-200 text-slate-500">
+          <i id="switchEdicionIcon" class="bi bi-toggle-off text-base"></i>
+          <span id="switchEdicionTxt">Edición: …</span>
+        </button>
+        <div class="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+          <span class="relative flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </span>
+          <span class="text-xs font-semibold text-emerald-700 tracking-wide uppercase font-mono">En Vivo</span>
+        </div>
       </div>
     </div>
   </header>
@@ -186,6 +193,9 @@
         </button>
         <button id="btnCorreo" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm shadow-indigo-200 transition-all active:scale-95" title="Enviar recordatorio a participantes que no han llenado su uniforme">
           <i class="bi bi-envelope-paper"></i> Recordatorio
+        </button>
+        <button id="btnCodigos" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-sm shadow-violet-200 transition-all active:scale-95" title="Enviar a cada participante su código de 5 dígitos">
+          <i class="bi bi-key"></i> Códigos
         </button>
       </div>
 
@@ -292,6 +302,14 @@
         <option value="Solo camisa">Solo camisa</option>
       </select>
 
+      <div class="flex flex-col gap-1.5 mb-3">
+        <label class="flex items-center gap-2 text-sm text-slate-700"><input id="uni-sin-numero" type="checkbox" class="w-4 h-4 accent-brand-600"> Sin número en la camisa</label>
+        <label class="flex items-center gap-2 text-sm text-slate-700"><input id="uni-sin-nombre" type="checkbox" class="w-4 h-4 accent-brand-600"> Sin nombre en la camisa</label>
+      </div>
+
+      <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Observación</label>
+      <textarea id="uni-observacion" rows="2" maxlength="120" class="w-full mb-3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all" style="resize:none;"></textarea>
+
       <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Clave de administrador</label>
       <input id="uni-pass" type="password" class="w-full mb-5 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all" placeholder="••••••••">
 
@@ -333,6 +351,47 @@
     </div>
   </div>
 
+  <!-- Modal enviar códigos -->
+  <div id="modal-codigos" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 mx-4 transform scale-95 opacity-0 transition-all duration-300">
+      <div class="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center mb-4 mx-auto">
+        <i class="bi bi-key text-2xl text-violet-600"></i>
+      </div>
+      <h3 class="text-xl font-bold text-center text-slate-800 mb-1">Enviar códigos</h3>
+      <p class="text-center text-slate-500 text-sm mb-4">
+        Envía a cada participante su <strong>código de 5 dígitos</strong> por correo.
+      </p>
+
+      <!-- Paso 1: clave admin -->
+      <div id="codigos-paso-clave">
+        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Clave de administrador</label>
+        <input id="codigos-pass" type="password" class="w-full mb-4 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white transition-all" placeholder="••••••••">
+        <div class="flex gap-3">
+          <button id="codigos-cancelar" class="flex-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-semibold transition-colors">Cancelar</button>
+          <button id="codigos-cargar" class="flex-1 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-sm transition-colors flex justify-center items-center gap-2">
+            <i class="bi bi-unlock"></i> Continuar
+          </button>
+        </div>
+      </div>
+
+      <!-- Paso 2: lista -->
+      <div id="codigos-paso-lista" class="hidden">
+        <div class="flex items-center justify-between mb-2 px-1">
+          <span class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Con correo</span>
+          <span class="text-sm font-black text-violet-600 font-mono" id="codigos-count">0</span>
+        </div>
+        <div id="codigos-lista" class="max-h-72 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 mb-3"></div>
+        <p id="codigos-progreso" class="text-center text-sm text-slate-500 mb-3 min-h-[20px]"></p>
+        <div class="flex gap-3">
+          <button id="codigos-cerrar" class="flex-1 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 rounded-xl font-semibold transition-colors">Cerrar</button>
+          <button id="codigos-enviar" class="flex-1 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2.5 rounded-xl font-semibold shadow-sm transition-colors flex justify-center items-center gap-2">
+            <i class="bi bi-send"></i> Enviar a todos
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="fixed bottom-6 right-6 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-medium">
     <i id="toast-icon" class="bi bi-info-circle text-brand-400 text-lg"></i>
@@ -351,10 +410,67 @@
     let eventosMap = {};
     let pendingDeleteId = null;
 
-    /* ── Config EmailJS (recordatorio de uniforme) ── */
+    /* ── Config EmailJS (1 sola plantilla genérica: asunto + cuerpo HTML) ── */
     const EMAILJS_SERVICE_ID  = "service_xdg8iho";
-    const EMAILJS_TEMPLATE_RECORDATORIO = "template_y6vad69"; // plantilla de recordatorio
+    const EMAILJS_TEMPLATE_GENERICO = "template_y6vad69"; // Subject={{asunto}} · To={{to_email}} · Body={{{cuerpo}}}
     const UNIFORMES_URL = "https://registroevento.netlify.app/uniformes.html"; // enlace público a uniformes.html
+
+    /* ── Plantillas HTML (viajan en la variable {{{cuerpo}}}) ── */
+    function cuerpoRecordatorio(r) {
+      const link = UNIFORMES_URL;
+      return `
+<div style="margin:0;padding:0;background:#eef2ff;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef2ff;padding:24px 12px;"><tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 24px rgba(37,99,235,.15);">
+      <tr><td style="background:linear-gradient(135deg,#2563eb,#1d4ed8);padding:28px 32px;text-align:center;">
+        <div style="font-size:40px;line-height:1;">👕</div>
+        <h1 style="margin:10px 0 0;color:#fff;font-size:20px;font-weight:700;">Te falta completar tu uniforme</h1>
+      </td></tr>
+      <tr><td style="padding:28px 32px;color:#1e293b;">
+        <p style="margin:0 0 14px;font-size:15px;line-height:1.6;">Hola <strong>${r.nombre_apellido}</strong>,</p>
+        <p style="margin:0 0 14px;font-size:15px;line-height:1.6;">Aún <strong>no has registrado</strong> tu número de camisa, talla y nombre para el uniforme de los juegos deportivos (<strong>${r.evento_nombre || ''}</strong> — curso ${r.curso || ''}).</p>
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.6;">Por favor complétalo cuanto antes:</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td align="center" style="border-radius:12px;background:linear-gradient(135deg,#2563eb,#1d4ed8);">
+          <a href="${link}" target="_blank" style="display:inline-block;padding:14px 30px;font-size:16px;font-weight:700;color:#fff;text-decoration:none;border-radius:12px;">Completar mi uniforme →</a>
+        </td></tr></table>
+        <p style="margin:24px 0 0;font-size:12px;line-height:1.6;color:#64748b;text-align:center;">Si el botón no funciona, copia este enlace:<br><a href="${link}" style="color:#2563eb;word-break:break-all;">${link}</a></p>
+      </td></tr>
+      <tr><td style="background:#f8fafc;padding:18px 32px;text-align:center;border-top:1px solid #e2e8f0;"><p style="margin:0;font-size:12px;color:#94a3b8;">Registro de Juegos Deportivos · Recordatorio automático.</p></td></tr>
+    </table>
+  </td></tr></table>
+</div>`;
+    }
+
+    function cuerpoCodigo(c) {
+      return `
+<div style="margin:0;padding:0;background:#f5f3ff;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3ff;padding:24px 12px;"><tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 24px rgba(79,70,229,.15);">
+      <tr><td style="background:linear-gradient(135deg,#6366f1,#4f46e5);padding:28px 32px;text-align:center;">
+        <div style="font-size:40px;line-height:1;">🔐</div>
+        <h1 style="margin:10px 0 0;color:#fff;font-size:20px;font-weight:700;">Tu código de acceso</h1>
+      </td></tr>
+      <tr><td style="padding:28px 32px;color:#1e293b;">
+        <p style="margin:0 0 14px;font-size:15px;line-height:1.6;">Hola <strong>${c.nombre_apellido}</strong>,</p>
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.6;">Este es tu <strong>código personal de 5 dígitos</strong> para registrar o modificar los datos de tu uniforme. Es único y solo tuyo.</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 22px;"><tr><td align="center" style="background:#eef2ff;border:2px dashed #6366f1;border-radius:14px;padding:18px 36px;">
+          <span style="font-size:38px;font-weight:800;letter-spacing:10px;color:#4f46e5;font-family:'Courier New',monospace;">${c.token}</span>
+        </td></tr></table>
+        <p style="margin:0;font-size:13px;line-height:1.6;color:#64748b;text-align:center;">Cuando llenes tu uniforme, el sistema te pedirá este código. <strong>No lo compartas.</strong></p>
+      </td></tr>
+      <tr><td style="background:#faf5ff;padding:18px 32px;text-align:center;border-top:1px solid #ede9fe;"><p style="margin:0;font-size:12px;color:#a78bfa;">Registro de Juegos Deportivos · Mensaje automático.</p></td></tr>
+    </table>
+  </td></tr></table>
+</div>`;
+    }
+
+    /* ── Helpers de visualización ── */
+    function camisaTexto(r) {
+      return r.numero_camisa ? r.numero_camisa : (r.sin_numero ? "Sin número" : "—");
+    }
+    function nombreCamisaTexto(r) {
+      return r.nombre_camisa ? r.nombre_camisa : (r.sin_nombre ? "Sin nombre" : "—");
+    }
 
     /* ── Toast ── */
     function toast(msg, iconClass = "bi-check-circle", ms = 3000) {
@@ -454,12 +570,14 @@
             }
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-            ${r.nombre_camisa || `<span class="text-slate-300">—</span>`}
+            ${r.nombre_camisa
+              ? r.nombre_camisa
+              : (r.sin_nombre ? `<span class="text-xs italic text-slate-400">Sin nombre</span>` : `<span class="text-slate-300">—</span>`)}
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
             ${r.numero_camisa
               ? `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-100">${r.numero_camisa}</span>`
-              : `<span class="text-slate-300">—</span>`}
+              : (r.sin_numero ? `<span class="text-xs italic text-slate-400">Sin número</span>` : `<span class="text-slate-300">—</span>`)}
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
             ${r.talla
@@ -530,6 +648,9 @@
       document.getElementById("uni-camisa").value = r.numero_camisa || "";
       document.getElementById("uni-talla").value  = r.talla || "";
       document.getElementById("uni-pedido").value = r.tipo_pedido || "";
+      document.getElementById("uni-sin-numero").checked = !!r.sin_numero;
+      document.getElementById("uni-sin-nombre").checked = !!r.sin_nombre;
+      document.getElementById("uni-observacion").value = r.observacion || "";
       document.getElementById("uni-pass").value   = "";
       document.getElementById("modal-uniforme").classList.add("modal-active");
     };
@@ -547,6 +668,9 @@
       const camisa = document.getElementById("uni-camisa").value.trim();
       const talla  = document.getElementById("uni-talla").value.trim();
       const tipoPedido = document.getElementById("uni-pedido").value;
+      const sinNumero = document.getElementById("uni-sin-numero").checked;
+      const sinNombre = document.getElementById("uni-sin-nombre").checked;
+      const observacion = document.getElementById("uni-observacion").value.trim();
       const pass   = document.getElementById("uni-pass").value;
       if (!nombreApellido || !curso) { toast("Completa nombre y curso", "bi-exclamation-circle text-amber-400"); return; }
       if (!pass)                     { toast("Ingresa la clave de administrador", "bi-shield-lock text-amber-400"); return; }
@@ -558,7 +682,7 @@
       const { error } = await supabase.rpc("admin_set_uniforme", {
         p_id: uniEditId, p_camisa: camisa, p_talla: talla, p_pass: pass,
         p_nombre_camisa: nombreCamisa, p_nombre_apellido: nombreApellido, p_curso: curso,
-        p_tipo_pedido: tipoPedido
+        p_tipo_pedido: tipoPedido, p_sin_numero: sinNumero, p_sin_nombre: sinNombre, p_observacion: observacion
       });
 
       btn.innerHTML = '<i class="bi bi-check2"></i> Guardar';
@@ -602,8 +726,8 @@
           r.curso,
           r.evento_nombre,
           r.participa ? "SÍ" : "NO",
-          r.nombre_camisa || "—",
-          r.numero_camisa || "—",
+          nombreCamisaTexto(r),
+          camisaTexto(r),
           r.talla || "—",
           r.tipo_pedido || "—"
         ])
@@ -621,10 +745,11 @@
         "Curso":     r.curso,
         "Evento":    r.evento_nombre,
         "Participa":     r.participa ? "SÍ" : "NO",
-        "Nombre Camisa": r.nombre_camisa || "",
-        "N° Camisa":     r.numero_camisa || "",
+        "Nombre Camisa": nombreCamisaTexto(r),
+        "N° Camisa":     camisaTexto(r),
         "Talla":         r.talla || "",
         "Pedido":        r.tipo_pedido || "",
+        "Observación":   r.observacion || "",
         "Teléfono":      r.telefono,
         "WhatsApp":      r.whatsapp_link
       })));
@@ -670,8 +795,8 @@
               ${r.participa ? 'SÍ' : 'NO'}
             </span>
           </td>
-          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;">${r.nombre_camisa || '—'}</td>
-          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.numero_camisa || '—'}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;">${nombreCamisaTexto(r)}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;font-weight:600;">${camisaTexto(r)}</td>
           <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;font-weight:600;">${r.talla || '—'}</td>
           <td style="padding:8px 14px;border-bottom:1px solid #e2e8f0;">${r.tipo_pedido || '—'}</td>
         </tr>
@@ -708,25 +833,23 @@
     // Participantes que SÍ participan, sin uniforme llenado y con correo válido
     function pendientesParaCorreo() {
       return todos.filter(r =>
-        r.participa && !r.numero_camisa && r.correo && reEmail.test(r.correo.trim()));
+        r.participa && !r.uniforme_at && r.correo && reEmail.test(r.correo.trim()));
     }
 
     function configCorreoOk() {
-      if (EMAILJS_TEMPLATE_RECORDATORIO.startsWith("PEGA_AQUI") || UNIFORMES_URL.includes("PON-AQUI")) {
+      if (EMAILJS_TEMPLATE_GENERICO.startsWith("PEGA_AQUI") || UNIFORMES_URL.includes("PON-AQUI")) {
         toast("Falta configurar el template y el enlace de uniformes", "bi-gear text-amber-400", 5000);
         return false;
       }
       return true;
     }
 
-    // Envío individual reutilizable
+    // Envío individual reutilizable (plantilla genérica)
     async function enviarCorreoA(r) {
-      return emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_RECORDATORIO, {
+      return emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_GENERICO, {
         to_email: r.correo.trim(),
-        to_name:  r.nombre_apellido,
-        curso:    r.curso || "",
-        evento:   r.evento_nombre || "",
-        link:     UNIFORMES_URL
+        asunto:   "Completa tu uniforme para los juegos 🏅",
+        cuerpo:   cuerpoRecordatorio(r)
       });
     }
 
@@ -850,6 +973,135 @@
             fail ? "bi-exclamation-triangle text-amber-400" : "bi-check-circle text-emerald-400", 5000);
     });
 
+    /* ── Interruptor de edición global ── */
+    let edicionHabilitada = false;
+    function pintarSwitch() {
+      const btn = document.getElementById("switchEdicion");
+      const icon = document.getElementById("switchEdicionIcon");
+      const txt = document.getElementById("switchEdicionTxt");
+      txt.textContent = "Edición: " + (edicionHabilitada ? "ON" : "OFF");
+      icon.className = "bi text-base " + (edicionHabilitada ? "bi-toggle-on" : "bi-toggle-off");
+      btn.className = "flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors " +
+        (edicionHabilitada
+          ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+          : "bg-slate-50 border-slate-200 text-slate-500");
+    }
+    async function cargarEdicion() {
+      const { data } = await supabase.from("config").select("valor").eq("clave","edicion_habilitada").maybeSingle();
+      edicionHabilitada = (data?.valor === "true");
+      pintarSwitch();
+    }
+    document.getElementById("switchEdicion").addEventListener("click", async () => {
+      const pass = prompt(`${edicionHabilitada ? "Deshabilitar" : "Habilitar"} la edición de uniformes.\nIngresa la clave de administrador:`);
+      if (pass === null) return;
+      const { data, error } = await supabase.rpc("set_edicion", { p_valor: !edicionHabilitada, p_pass: pass });
+      if (error) { toast(error.message || "No se pudo cambiar", "bi-x-circle text-rose-400", 5000); return; }
+      edicionHabilitada = (data === "true");
+      pintarSwitch();
+      toast("Edición " + (edicionHabilitada ? "habilitada" : "deshabilitada"), "bi-check-circle text-emerald-400");
+    });
+
+    /* ── Enviar códigos de 5 dígitos ── */
+    let codigosCache = []; // [{id, nombre_apellido, correo, token}]
+    const codigosEnviados = new Set();
+
+    document.getElementById("btnCodigos").addEventListener("click", () => {
+      if (EMAILJS_TEMPLATE_GENERICO.startsWith("PEGA_AQUI")) {
+        toast("Falta configurar la plantilla de EmailJS en admin.html", "bi-gear text-amber-400", 6000); return;
+      }
+      document.getElementById("codigos-paso-clave").classList.remove("hidden");
+      document.getElementById("codigos-paso-lista").classList.add("hidden");
+      document.getElementById("codigos-pass").value = "";
+      document.getElementById("codigos-progreso").textContent = "";
+      document.getElementById("modal-codigos").classList.add("modal-active");
+      setTimeout(() => document.getElementById("codigos-pass").focus(), 100);
+    });
+    const cerrarCodigos = () => document.getElementById("modal-codigos").classList.remove("modal-active");
+    document.getElementById("codigos-cancelar").addEventListener("click", cerrarCodigos);
+    document.getElementById("codigos-cerrar").addEventListener("click", cerrarCodigos);
+
+    function renderListaCodigos() {
+      const lista = document.getElementById("codigos-lista");
+      const conCorreo = codigosCache.filter(c => c.correo && reEmail.test((c.correo||"").trim()));
+      document.getElementById("codigos-count").textContent = conCorreo.length;
+      document.getElementById("codigos-enviar").disabled = conCorreo.length === 0;
+      lista.innerHTML = conCorreo.map(c => {
+        const ya = codigosEnviados.has(c.id);
+        return `
+        <div class="flex items-center gap-3 px-3 py-2.5" data-fila="${c.id}">
+          <div class="h-8 w-8 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-xs shrink-0">${c.nombre_apellido.charAt(0).toUpperCase()}</div>
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-semibold text-slate-800 truncate">${c.nombre_apellido}</div>
+            <div class="text-xs text-slate-400 truncate">${c.correo}</div>
+          </div>
+          <div class="estado-uno shrink-0">${ya ? '<span class="text-emerald-600 text-xs font-semibold"><i class="bi bi-check-circle-fill"></i> Enviado</span>' : ''}</div>
+          <button class="btn-codigo-uno shrink-0 ${ya ? 'hidden' : ''} bg-violet-50 hover:bg-violet-100 text-violet-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors" data-id="${c.id}"><i class="bi bi-send"></i> Enviar</button>
+        </div>`;
+      }).join("");
+      lista.querySelectorAll(".btn-codigo-uno").forEach(btn =>
+        btn.addEventListener("click", () => enviarCodigoUno(Number(btn.dataset.id))));
+    }
+
+    async function enviarCodigoEmail(c) {
+      return emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_GENERICO, {
+        to_email: c.correo.trim(),
+        asunto:   "Tu código para el uniforme 🔐",
+        cuerpo:   cuerpoCodigo(c)
+      });
+    }
+    function marcarCodigoFila(id, estado) {
+      const fila = document.querySelector(`#codigos-lista [data-fila="${id}"]`);
+      if (!fila) return;
+      const btn = fila.querySelector(".btn-codigo-uno");
+      const tag = fila.querySelector(".estado-uno");
+      if (estado === "enviando") { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i>'; }
+      else if (estado === "ok") { btn.classList.add("hidden"); tag.innerHTML = '<span class="text-emerald-600 text-xs font-semibold"><i class="bi bi-check-circle-fill"></i> Enviado</span>'; }
+      else if (estado === "error") { btn.disabled = false; btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Reintentar'; }
+    }
+    async function enviarCodigoUno(id) {
+      const c = codigosCache.find(x => x.id === id);
+      if (!c) return;
+      marcarCodigoFila(id, "enviando");
+      try { await enviarCodigoEmail(c); codigosEnviados.add(id); marcarCodigoFila(id, "ok"); toast(`Código enviado a ${c.nombre_apellido}`, "bi-check-circle text-emerald-400"); }
+      catch (e) { console.error(e); marcarCodigoFila(id, "error"); toast("No se pudo enviar", "bi-x-circle text-rose-400"); }
+    }
+
+    document.getElementById("codigos-cargar").addEventListener("click", async () => {
+      const pass = document.getElementById("codigos-pass").value;
+      if (!pass) { toast("Ingresa la clave", "bi-shield-lock text-amber-400"); return; }
+      const btn = document.getElementById("codigos-cargar");
+      btn.innerHTML = '<i class="bi bi-hourglass-split animate-spin"></i> Cargando...'; btn.disabled = true;
+      const { data, error } = await supabase.rpc("obtener_codigos", { p_pass: pass });
+      btn.innerHTML = '<i class="bi bi-unlock"></i> Continuar'; btn.disabled = false;
+      if (error) { toast(error.message || "Clave incorrecta", "bi-x-circle text-rose-400", 5000); return; }
+      codigosCache = data || [];
+      codigosEnviados.clear();
+      document.getElementById("codigos-paso-clave").classList.add("hidden");
+      document.getElementById("codigos-paso-lista").classList.remove("hidden");
+      renderListaCodigos();
+    });
+
+    document.getElementById("codigos-enviar").addEventListener("click", async () => {
+      const pendientes = codigosCache.filter(c => c.correo && reEmail.test((c.correo||"").trim()) && !codigosEnviados.has(c.id));
+      if (pendientes.length === 0) { toast("No quedan códigos por enviar", "bi-info-circle"); return; }
+      const btn = document.getElementById("codigos-enviar");
+      const prog = document.getElementById("codigos-progreso");
+      btn.disabled = true; document.getElementById("codigos-cerrar").disabled = true;
+      let ok = 0, fail = 0;
+      for (let i = 0; i < pendientes.length; i++) {
+        const c = pendientes[i];
+        prog.textContent = `Enviando ${i + 1} de ${pendientes.length}…`;
+        marcarCodigoFila(c.id, "enviando");
+        try { await enviarCodigoEmail(c); codigosEnviados.add(c.id); marcarCodigoFila(c.id, "ok"); ok++; }
+        catch (e) { console.error(e); marcarCodigoFila(c.id, "error"); fail++; }
+        await new Promise(res => setTimeout(res, 600));
+      }
+      prog.textContent = "";
+      btn.disabled = false; document.getElementById("codigos-cerrar").disabled = false;
+      toast(`Códigos enviados: ${ok}${fail ? ` · fallidos: ${fail}` : ""}`,
+            fail ? "bi-exclamation-triangle text-amber-400" : "bi-check-circle text-emerald-400", 5000);
+    });
+
     /* ── Realtime ── */
     supabase
       .channel("admin_realtime")
@@ -860,6 +1112,7 @@
     /* ── Init ── */
     await cargarEventos();
     await cargarDatos();
+    await cargarEdicion();
 
   </script>
 </body>

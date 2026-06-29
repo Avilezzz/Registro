@@ -288,12 +288,65 @@
   @keyframes toastOut { from { opacity:1; transform: none; } to { opacity:0; transform: translateX(30px) scale(.95); } }
 
   .modal-content { border: none; border-radius: 20px; }
+
+  /* ── Casillas de observación ── */
+  .obs-check {
+    display: flex; align-items: center; gap: 9px;
+    font-size: .9rem; color: var(--slate-800);
+    padding: 9px 12px; margin-bottom: 8px; cursor: pointer;
+    border: 1.5px solid var(--slate-200); border-radius: 11px; background: #f8fafc;
+    transition: border-color .15s, background .15s;
+  }
+  .obs-check:hover { border-color: #bfdbfe; background: var(--blue-soft); }
+  .obs-check input { width: 18px; height: 18px; accent-color: var(--blue); cursor: pointer; }
+
+  /* ── Overlay de código de 5 dígitos ── */
+  #codigoOverlay {
+    position: fixed; inset: 0; z-index: 3000;
+    background: rgba(15,23,42,.55); backdrop-filter: blur(3px);
+    display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  #codigoOverlay.show { display: flex; }
+  .codigo-card {
+    background: #fff; border-radius: 20px; padding: 26px 24px; width: 100%; max-width: 340px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25); text-align: center;
+    animation: toastIn .25s ease both;
+  }
+  .codigo-card h4 { font-size: 1.1rem; font-weight: 700; color: var(--slate-800); margin: 0 0 4px; }
+  .codigo-card p  { font-size: .82rem; color: var(--slate-500); margin: 0 0 16px; }
+  #codigoInput {
+    width: 100%; text-align: center; letter-spacing: .5em;
+    font-size: 1.6rem; font-weight: 700; font-family: 'Sora', sans-serif;
+    border: 1.5px solid var(--slate-200); border-radius: 12px; padding: .6rem;
+    color: var(--slate-800); outline: none; background: #f8fafc;
+  }
+  #codigoInput:focus { border-color: var(--blue); box-shadow: 0 0 0 3.5px rgba(37,99,235,.13); background: #fff; }
+  #codigoMsg { font-size: .78rem; color: var(--red); min-height: 16px; display: block; margin-top: 6px; }
+  .codigo-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .codigo-actions button { flex: 1; border: none; border-radius: 12px; padding: .7rem; font-weight: 700; cursor: pointer; font-family: 'Sora', sans-serif; }
+  #codigoCancel { background: #f1f5f9; color: var(--slate-800); }
+  #codigoOk { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: #fff; }
 </style>
 </head>
 
 <body>
 
 <div id="toastArea"></div>
+
+<!-- Overlay para el código de 5 dígitos -->
+<div id="codigoOverlay">
+  <div class="codigo-card">
+    <div style="font-size:1.8rem;">🔐</div>
+    <h4 id="codigoTitulo">Confirma tu identidad</h4>
+    <p>Ingresa tu <strong>código de 5 dígitos</strong> (enviado a tu correo).</p>
+    <input id="codigoInput" type="text" inputmode="numeric" maxlength="5" placeholder="•••••" autocomplete="off">
+    <span id="codigoMsg"></span>
+    <div class="codigo-actions">
+      <button id="codigoCancel" type="button">Cancelar</button>
+      <button id="codigoOk" type="button">Confirmar</button>
+    </div>
+  </div>
+</div>
 
 <div class="wrap">
 
@@ -350,6 +403,9 @@
 let participantes = [];
 let sexosMap = {};
 let modalSexoId = null;
+let modalRegistroId = null;
+let edicionHabilitada = false;
+let codigoActual = null;
 let modalBs;
 const WHATSAPP_ADMIN = '593967549140'; // sin el "+"
 
@@ -374,14 +430,16 @@ function esc(s) {
 
 /* ── Cargar datos: solo participantes (participa = true) ── */
 async function cargar() {
-  const [{ data: evs }, { data: sxs }, { data: regs, error }] = await Promise.all([
+  const [{ data: evs }, { data: sxs }, { data: cfg }, { data: regs, error }] = await Promise.all([
     window.supabase.from('eventos').select('*'),
     window.supabase.from('sexos').select('*'),
+    window.supabase.from('config').select('*').eq('clave', 'edicion_habilitada').maybeSingle(),
     window.supabase.from('registro_eventos').select('*').eq('participa', true).order('nombre_apellido')
   ]);
 
   if (error) { toast('error', 'No se pudo cargar', error.message); return; }
 
+  edicionHabilitada = (cfg?.valor === 'true');
   const eventosMap = {};
   (evs || []).forEach(e => eventosMap[e.id] = e.nombre);
   sexosMap = {};
@@ -410,7 +468,7 @@ function poblarFiltroCurso() {
 /* ── Contador de progreso (sobre el total, no el filtrado por búsqueda) ── */
 function actualizarProgreso() {
   const total    = participantes.length;
-  const enviados = participantes.filter(p => p.numero_camisa).length;
+  const enviados = participantes.filter(p => p.uniforme_at).length;
   const pct      = total ? Math.round((enviados / total) * 100) : 0;
 
   document.getElementById('progFill').style.width = pct + '%';
@@ -438,7 +496,7 @@ function render() {
   }
 
   lista.innerHTML = filtrados.map(r => {
-    const hecho = !!r.numero_camisa;
+    const hecho = !!r.uniforme_at;
     const badge = hecho
       ? `<span class="badge-state badge-done">✓ Enviado</span>`
       : `<span class="badge-state badge-pend">Pendiente</span>`;
@@ -495,6 +553,7 @@ function numerosOcupados() {
   const set = new Set();
   participantes.forEach(p => {
     if (p.sexo_id !== modalSexoId) return;
+    if (p.id === modalRegistroId) return; // no contar el número propio
     const n = normNum(p.numero_camisa);
     if (n) set.add(n);
   });
@@ -534,18 +593,64 @@ function renderGrid() {
     }));
 }
 
+/* ── Pedir código de 5 dígitos (Promise) ── */
+function pedirCodigo(titulo = 'Confirma tu identidad') {
+  return new Promise(resolve => {
+    const ov  = document.getElementById('codigoOverlay');
+    const inp = document.getElementById('codigoInput');
+    const msg = document.getElementById('codigoMsg');
+    const btnOk = document.getElementById('codigoOk');
+    const btnNo = document.getElementById('codigoCancel');
+    document.getElementById('codigoTitulo').textContent = titulo;
+    inp.value = ''; msg.textContent = '';
+    ov.classList.add('show');
+    setTimeout(() => inp.focus(), 50);
+
+    const cerrar = (val) => {
+      ov.classList.remove('show');
+      btnOk.onclick = null; btnNo.onclick = null; inp.onkeydown = null; inp.oninput = null;
+      resolve(val);
+    };
+    inp.oninput = () => { inp.value = inp.value.replace(/\D/g, '').slice(0, 5); };
+    const confirmar = () => {
+      const v = inp.value.trim();
+      if (!/^\d{5}$/.test(v)) { msg.textContent = 'Debe ser un código de 5 dígitos.'; return; }
+      cerrar(v);
+    };
+    btnOk.onclick = confirmar;
+    btnNo.onclick = () => cerrar(null);
+    inp.onkeydown = (e) => { if (e.key === 'Enter') confirmar(); };
+  });
+}
+
 /* ── Abrir modal ── */
-function abrirModal(id) {
+async function abrirModal(id) {
   const r = participantes.find(p => p.id === id);
   if (!r) return;
 
   modalSexoId = r.sexo_id;
+  modalRegistroId = r.id;
+  codigoActual = null;
   document.getElementById('modalTitulo').textContent = r.nombre_apellido;
-  const body = document.getElementById('modalBody');
 
-  if (r.numero_camisa) {
-    // Ya enviado: NO se muestran los datos (secreto). Solo confirmación + contacto.
-    body.innerHTML = `
+  if (r.uniforme_at) {
+    if (!edicionHabilitada) { mostrarYaEnviado(r); return; }
+    // Edición habilitada: pedir código para desbloquear
+    const code = await pedirCodigo('Ingresa tu código para editar');
+    if (!code) return;
+    const { data: ok, error } = await window.supabase.rpc('verificar_codigo', { p_id: id, p_token: code });
+    if (error || !ok) { toast('error', 'Código incorrecto', 'Ese código no corresponde a este registro.', 5000); return; }
+    codigoActual = code;
+    abrirFormulario(r, true);
+    return;
+  }
+  abrirFormulario(r, false);
+}
+
+/* ── Modal "ya enviado" (secreto) ── */
+function mostrarYaEnviado(r) {
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
       <div class="locked-box">
         <img src="417153432.png" alt="Enviado" class="locked-sticker">
         <div style="font-weight:700;font-size:1.05rem;color:var(--blue-dark);margin:6px 0;">¡Datos enviados!</div>
@@ -558,11 +663,12 @@ function abrirModal(id) {
           Escribir por WhatsApp
         </a>
       </div>`;
-    modalBs.show();
-    return;
-  }
+  modalBs.show();
+}
 
-  // Formulario para llenar (con camiseta interactiva)
+/* ── Formulario (llenar o editar) ── */
+function abrirFormulario(r, esEdicion) {
+  const body = document.getElementById('modalBody');
   body.innerHTML = `
     ${shirtSVG()}
     <div class="mb-3">
@@ -603,14 +709,33 @@ function abrirModal(id) {
       </div>
       <span class="field-msg" id="msgPedido"></span>
     </div>
+    <div class="mb-3">
+      <label class="reg-label">Observaciones</label>
+      <label class="obs-check"><input type="checkbox" id="inpSinNumero"> No quiero <strong>número</strong> en mi camisa</label>
+      <label class="obs-check"><input type="checkbox" id="inpSinNombre"> No quiero <strong>nombre</strong> en mi camisa</label>
+      <textarea id="inpObservacion" class="reg-input" rows="2" maxlength="120" placeholder="Observación (opcional)" style="resize:none;margin-top:8px;"></textarea>
+    </div>
     <p style="font-size:.78rem;color:var(--slate-500);margin-bottom:14px;">
-      ⚠️ Al enviar, tus datos quedarán <strong>bloqueados</strong> y nadie más podrá cambiarlos.
+      🔒 Al ${esEdicion ? 'guardar' : 'enviar'} te pediremos tu <strong>código de 5 dígitos</strong>${esEdicion ? '' : ' y tus datos quedarán bloqueados'}.
     </p>
-    <button class="btn-reg" id="btnGuardar">Enviar</button>`;
+    <button class="btn-reg" id="btnGuardar">${esEdicion ? 'Guardar cambios' : 'Enviar'}</button>`;
+
+  // Precargar si es edición
+  if (esEdicion) {
+    document.getElementById('inpNombre').value = r.nombre_camisa || '';
+    document.getElementById('inpCamisa').value = r.numero_camisa || '';
+    document.getElementById('inpTalla').value  = r.talla || '';
+    document.getElementById('inpObservacion').value = r.observacion || '';
+    document.getElementById('inpSinNumero').checked = !!r.sin_numero;
+    document.getElementById('inpSinNombre').checked = !!r.sin_nombre;
+    if (r.tipo_pedido) {
+      const opt = [...document.querySelectorAll('.pedido-opt')].find(o => o.dataset.val === r.tipo_pedido);
+      if (opt) { opt.classList.add('sel'); opt.querySelector('input').checked = true; }
+    }
+  }
 
   document.getElementById('inpNombre').addEventListener('input', actualizarShirt);
   document.getElementById('inpCamisa').addEventListener('input', () => {
-    // solo dígitos
     const inp = document.getElementById('inpCamisa');
     inp.value = inp.value.replace(/\D/g, '').slice(0, 3);
     actualizarShirt();
@@ -624,9 +749,35 @@ function abrirModal(id) {
       const msg = document.getElementById('msgPedido');
       msg.textContent = '✓ Correcto'; msg.className = 'field-msg ok';
     }));
-  document.getElementById('btnGuardar').addEventListener('click', () => guardar(id));
+
+  // Casillas de observación
+  document.getElementById('inpSinNumero').addEventListener('change', aplicarSinNumero);
+  document.getElementById('inpSinNombre').addEventListener('change', aplicarSinNombre);
+  aplicarSinNumero(); aplicarSinNombre();
+
+  document.getElementById('btnGuardar').addEventListener('click', () => guardar(r.id));
   renderGrid();
+  actualizarShirt();
   modalBs.show();
+}
+
+/* ── Casillas "sin número" / "sin nombre" ── */
+function aplicarSinNumero() {
+  const chk = document.getElementById('inpSinNumero').checked;
+  const inp = document.getElementById('inpCamisa');
+  inp.disabled = chk;
+  if (chk) { inp.value = ''; inp.classList.remove('is-invalid-field','is-valid-field'); document.getElementById('msgCamisa').textContent = ''; }
+  document.getElementById('numGrid').style.display = chk ? 'none' : '';
+  document.getElementById('numSexoLabel').style.display = chk ? 'none' : '';
+  const lg = document.querySelector('.num-legend'); if (lg) lg.style.display = chk ? 'none' : '';
+  actualizarShirt();
+}
+function aplicarSinNombre() {
+  const chk = document.getElementById('inpSinNombre').checked;
+  const inp = document.getElementById('inpNombre');
+  inp.disabled = chk;
+  if (chk) { inp.value = ''; inp.classList.remove('is-invalid-field','is-valid-field'); document.getElementById('msgNombre').textContent = ''; }
+  actualizarShirt();
 }
 
 /* ── Validación simple de no-vacío ── */
@@ -641,25 +792,30 @@ function validar(inpId, msgId) {
   return ok;
 }
 
-/* ── Guardar ── */
+/* ── Guardar (con código de propiedad) ── */
 async function guardar(id) {
-  const okN = validar('inpNombre', 'msgNombre');
-  const okC = validar('inpCamisa', 'msgCamisa');
+  const sinNumero = document.getElementById('inpSinNumero').checked;
+  const sinNombre = document.getElementById('inpSinNombre').checked;
+
+  // Validación condicional
+  const okN = sinNombre ? true : validar('inpNombre', 'msgNombre');
+  const okC = sinNumero ? true : validar('inpCamisa', 'msgCamisa');
   const okT = validar('inpTalla', 'msgTalla');
   const pedidoSel = document.querySelector('input[name="tipoPedido"]:checked');
   const okP = !!pedidoSel;
   const msgP = document.getElementById('msgPedido');
   msgP.textContent = okP ? '✓ Correcto' : 'Elige una opción.';
   msgP.className = 'field-msg ' + (okP ? 'ok' : 'err');
-  if (!okN || !okC || !okT || !okP) { toast('warning', 'Faltan datos', 'Completa nombre, camisa, talla y el tipo de pedido.'); return; }
+  if (!okN || !okC || !okT || !okP) { toast('warning', 'Faltan datos', 'Completa los campos obligatorios.'); return; }
 
-  const nombreCamisa = document.getElementById('inpNombre').value.trim();
-  const camisa = document.getElementById('inpCamisa').value.trim();
-  const talla  = document.getElementById('inpTalla').value.trim();
-  const tipoPedido = pedidoSel.value;
+  const nombreCamisa = sinNombre ? '' : document.getElementById('inpNombre').value.trim();
+  const camisa       = sinNumero ? '' : document.getElementById('inpCamisa').value.trim();
+  const talla        = document.getElementById('inpTalla').value.trim();
+  const observacion  = document.getElementById('inpObservacion').value.trim();
+  const tipoPedido   = pedidoSel.value;
 
-  // Verificar que el número no esté ocupado (control local + BD)
-  if (numerosOcupados().has(normNum(camisa))) {
+  // Chequeo local de número ocupado (por sexo, excluyendo el propio) salvo "sin número"
+  if (!sinNumero && numerosOcupados().has(normNum(camisa))) {
     document.getElementById('msgCamisa').textContent = 'Ese número ya está ocupado. Elige otro.';
     document.getElementById('msgCamisa').className = 'field-msg err';
     document.getElementById('inpCamisa').classList.add('is-invalid-field');
@@ -667,40 +823,39 @@ async function guardar(id) {
     return;
   }
 
-  const btn = document.getElementById('btnGuardar');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner-sm"></span>Enviando…';
+  // Pedir el código de propiedad (si no se capturó al desbloquear la edición)
+  const code = codigoActual || await pedirCodigo('Confirma tu identidad');
+  if (!code) return;
 
-  // Solo pasa si la fila aun no tiene uniforme (lo impone la RLS).
-  const { data, error } = await window.supabase
-    .from('registro_eventos')
-    .update({ numero_camisa: camisa, talla, nombre_camisa: nombreCamisa, tipo_pedido: tipoPedido, uniforme_at: new Date().toISOString() })
-    .eq('id', id)
-    .is('numero_camisa', null)
-    .select();
+  const btn = document.getElementById('btnGuardar');
+  const txtBtn = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-sm"></span>Guardando…';
+
+  const { error } = await window.supabase.rpc('guardar_uniforme_token', {
+    p_id: id, p_token: code,
+    p_numero: camisa, p_talla: talla, p_nombre: nombreCamisa, p_pedido: tipoPedido,
+    p_sin_numero: sinNumero, p_sin_nombre: sinNombre, p_observacion: observacion
+  });
 
   if (error) {
-    // 23505 = violación de índice único → alguien tomó ese número primero
-    if (error.code === '23505') {
+    const m = (error.message || '').toLowerCase();
+    if (error.code === '23505' || m.includes('duplicate')) {
       toast('error', 'Número ocupado', `El número ${esc(camisa)} acaba de ser tomado por otra persona. Elige otro.`, 7000);
-      await cargar();
-      renderGrid();
+      codigoActual = code; await cargar(); renderGrid();
+    } else if (m.includes('código') || m.includes('codigo')) {
+      toast('error', 'Código incorrecto', 'El código de 5 dígitos no es válido.', 6000);
+      codigoActual = null;
+    } else if (m.includes('deshabilitada')) {
+      toast('error', 'Edición deshabilitada', 'El administrador no tiene habilitada la edición.', 6000);
     } else {
       toast('error', 'No se pudo guardar', error.message, 6000);
     }
-    btn.disabled = false; btn.innerHTML = 'Enviar';
+    btn.disabled = false; btn.innerHTML = txtBtn;
     return;
   }
 
-  if (!data || data.length === 0) {
-    // La fila ya estaba bloqueada (alguien la llenó antes).
-    toast('warning', 'Ya estaba registrado', 'Este participante ya tenía uniforme. Contacta al administrador.', 6000);
-    modalBs.hide();
-    await cargar();
-    return;
-  }
-
-  toast('success', '¡Datos enviados!', 'Tu información quedó registrada. Para cambios, contacta al administrador.', 6000);
+  toast('success', '¡Datos guardados!', 'Tu información quedó registrada correctamente.', 6000);
   modalBs.hide();
   await cargar();
 }
