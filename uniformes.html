@@ -824,8 +824,16 @@ async function guardar(id) {
   }
 
   // Pedir el código de propiedad (si no se capturó al desbloquear la edición)
-  const code = codigoActual || await pedirCodigo('Confirma tu identidad');
-  if (!code) return;
+  let code = codigoActual;
+  if (!code) {
+    // Ocultar el formulario para que Bootstrap no robe el foco del input del código
+    modalBs.hide();
+    await new Promise(res => setTimeout(res, 250));
+    code = await pedirCodigo('Confirma tu identidad');
+    if (!code) { modalBs.show(); return; }
+    modalBs.show();
+    await new Promise(res => setTimeout(res, 200));
+  }
 
   const btn = document.getElementById('btnGuardar');
   const txtBtn = btn.textContent;
@@ -865,7 +873,7 @@ document.getElementById('buscar').addEventListener('input', render);
 document.getElementById('filtroCurso').addEventListener('change', render);
 
 window.addEventListener('DOMContentLoaded', async () => {
-  modalBs = new bootstrap.Modal(document.getElementById('modalUniforme'));
+  modalBs = new bootstrap.Modal(document.getElementById('modalUniforme'), { focus: false });
   await cargar();
 
   // Tiempo real: si alguien guarda, refresca la lista.
