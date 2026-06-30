@@ -326,6 +326,102 @@
   .codigo-actions button { flex: 1; border: none; border-radius: 12px; padding: .7rem; font-weight: 700; cursor: pointer; font-family: 'Sora', sans-serif; }
   #codigoCancel { background: #f1f5f9; color: var(--slate-800); }
   #codigoOk { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: #fff; }
+
+  /* ════════════════ 🌌 MODO OSCURO NEÓN ÉPICO 🌌 ════════════════ */
+  :root {
+    --blue:      #22d3ee;
+    --blue-dark: #38bdf8;
+    --blue-soft: rgba(34,211,238,.12);
+    --green:     #34d399;
+    --red:       #ff5d73;
+    --slate-800: #e7e9ff;
+    --slate-500: #9aa0c8;
+    --slate-200: rgba(124,131,255,.22);
+  }
+  body {
+    background:
+      radial-gradient(900px 520px at 100% -10%, rgba(217,70,239,.20) 0%, transparent 60%),
+      radial-gradient(820px 520px at -10% 0%, rgba(34,211,238,.20) 0%, transparent 55%),
+      radial-gradient(700px 700px at 50% 120%, rgba(168,85,247,.16) 0%, transparent 60%),
+      #06060f;
+    color: var(--slate-800);
+  }
+  .wrap { position: relative; z-index: 1; }
+
+  .page-head {
+    background: rgba(17,18,38,.72);
+    border: 1px solid rgba(124,131,255,.22);
+    box-shadow: 0 0 0 1px rgba(34,211,238,.10), 0 18px 60px rgba(34,211,238,.10), 0 0 60px rgba(217,70,239,.10);
+    backdrop-filter: blur(10px);
+  }
+  .page-head h1 { color: #fff; text-shadow: 0 0 16px rgba(34,211,238,.55); }
+  .head-icon { background: linear-gradient(135deg, #22d3ee, #d946ef); box-shadow: 0 0 24px rgba(34,211,238,.6); }
+
+  .btn-registrarse { background: linear-gradient(135deg, #34d399, #22d3ee); color: #04121a; box-shadow: 0 0 18px rgba(52,211,153,.5); }
+  .btn-registrarse:hover { color: #04121a; box-shadow: 0 0 28px rgba(52,211,153,.75); }
+
+  .progress-track { background: rgba(124,131,255,.15); }
+  .progress-fill { background: linear-gradient(90deg, #22d3ee, #d946ef); box-shadow: 0 0 14px rgba(34,211,238,.7); }
+  .progress-text strong { color: #67e8f9; }
+
+  .search-box { background: rgba(17,18,38,.7); color: var(--slate-800); border-color: rgba(124,131,255,.22); }
+  .search-box::placeholder { color: #6b7099; }
+  .search-box:focus { border-color: #22d3ee; box-shadow: 0 0 0 3px rgba(34,211,238,.22), 0 0 18px rgba(34,211,238,.35); }
+
+  .person { background: rgba(17,18,38,.65); border-color: rgba(124,131,255,.18); backdrop-filter: blur(6px); }
+  .person:hover { border-color: #22d3ee; box-shadow: 0 0 22px rgba(34,211,238,.30); }
+  .avatar { background: rgba(34,211,238,.15); color: #67e8f9; box-shadow: inset 0 0 14px rgba(34,211,238,.35); }
+
+  .badge-pend { background: rgba(245,158,11,.12); color: #fcd34d; border: 1px solid rgba(245,158,11,.5); }
+  .badge-done { background: rgba(52,211,153,.12); color: #6ee7b7; border: 1px solid rgba(52,211,153,.5); box-shadow: 0 0 12px rgba(52,211,153,.25); }
+
+  .reg-input, #codigoInput { background: rgba(10,11,26,.85); color: var(--slate-800); border-color: rgba(124,131,255,.25); }
+  .reg-input::placeholder { color: #6b7099; }
+  .reg-input:focus, #codigoInput:focus { border-color: #22d3ee; background: rgba(10,11,26,.95); box-shadow: 0 0 0 3px rgba(34,211,238,.22), 0 0 16px rgba(34,211,238,.3); }
+  .reg-input.is-valid-field   { border-color: #34d399 !important; background: rgba(52,211,153,.10) !important; }
+  .reg-input.is-invalid-field { border-color: #ff5d73 !important; background: rgba(255,93,115,.10) !important; }
+
+  .btn-reg { background: linear-gradient(135deg, #22d3ee, #d946ef); color: #06060f; box-shadow: 0 0 22px rgba(34,211,238,.5); }
+  .btn-reg:hover:not(:disabled) { opacity: 1; box-shadow: 0 0 32px rgba(217,70,239,.6); }
+
+  .locked-box { background: rgba(34,211,238,.07); border: 1px solid rgba(34,211,238,.3); }
+  .locked-box .lk-val { color: #67e8f9; }
+
+  .num-grid { background: rgba(10,11,26,.6); border-color: rgba(124,131,255,.2); }
+  .num-chip.free { background: rgba(34,211,238,.08); color: #a5f3fc; border-color: rgba(34,211,238,.3); }
+  .num-chip.free:hover { background: rgba(34,211,238,.2); box-shadow: 0 0 12px rgba(34,211,238,.5); }
+  .num-chip.taken { background: rgba(255,93,115,.08); color: #fda4af; border-color: rgba(255,93,115,.35); }
+  .num-chip.selected { background: linear-gradient(135deg, #22d3ee, #d946ef); color: #06060f; border-color: transparent; box-shadow: 0 0 14px rgba(217,70,239,.6); }
+  .lg-free { background: rgba(34,211,238,.45); border-color: #22d3ee; }
+  .lg-taken { background: rgba(255,93,115,.45); border-color: #ff5d73; }
+  .lg-sel  { background: #d946ef; }
+
+  .pedido-opt { background: rgba(10,11,26,.6); border-color: rgba(124,131,255,.2); }
+  .pedido-opt:hover { border-color: rgba(34,211,238,.5); }
+  .pedido-opt .po-text { color: var(--slate-800); }
+  .pedido-opt.sel { border-color: #22d3ee; background: rgba(34,211,238,.12); box-shadow: 0 0 18px rgba(34,211,238,.4); }
+
+  .obs-check { background: rgba(10,11,26,.6); color: var(--slate-800); border-color: rgba(124,131,255,.2); }
+  .obs-check:hover { border-color: rgba(34,211,238,.5); background: rgba(34,211,238,.08); }
+
+  .toast-item { box-shadow: 0 8px 32px rgba(0,0,0,.5); }
+  .toast-success { background: rgba(14,38,28,.96); border: 1.5px solid #34d399; color: #bbf7d0; }
+  .toast-error   { background: rgba(45,16,24,.96); border: 1.5px solid #ff5d73; color: #fecdd3; }
+  .toast-warning { background: rgba(45,35,12,.96); border: 1.5px solid #fcd34d; color: #fde68a; }
+
+  .shirt-svg { filter: drop-shadow(0 0 20px rgba(34,211,238,.6)); }
+
+  #codigoOverlay { background: rgba(3,3,12,.72); }
+  .codigo-card { background: #0d0e22; border: 1px solid rgba(124,131,255,.25); box-shadow: 0 0 44px rgba(34,211,238,.22); }
+  .codigo-card h4 { color: #fff; }
+  #codigoCancel { background: rgba(124,131,255,.12); color: #cbd0ff; }
+  #codigoOk { background: linear-gradient(135deg, #22d3ee, #d946ef); color: #06060f; }
+
+  /* Modal de Bootstrap en oscuro */
+  .modal-content { background: #0d0e22; color: var(--slate-800); border: 1px solid rgba(124,131,255,.25); box-shadow: 0 0 50px rgba(34,211,238,.2); }
+  .modal-header { border-bottom-color: rgba(124,131,255,.18); }
+  .modal-title { color: #fff; text-shadow: 0 0 12px rgba(34,211,238,.4); }
+  .btn-close { filter: invert(1) grayscale(1) brightness(2); }
 </style>
 </head>
 
