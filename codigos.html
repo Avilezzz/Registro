@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Códigos de participantes</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        fontFamily: { sans: ['Plus Jakarta Sans','sans-serif'], mono: ['Fira Code','monospace'] },
+        colors: { ink:{900:'#1e1b4b'}, iris:{50:'#eef2ff',100:'#e0e7ff',500:'#6366f1',600:'#4f46e5',700:'#4338ca'} }
+      } }
+    }
+  </script>
+  <style>
+    body { background:
+      radial-gradient(1000px 460px at 100% -10%, #eef2ff 0%, transparent 60%),
+      radial-gradient(800px 460px at -10% 0%, #faf5ff 0%, transparent 55%),
+      #f7f7fb; }
+    .toast-active { transform: translateY(0) !important; opacity: 1 !important; }
+    ::-webkit-scrollbar { width: 9px; } ::-webkit-scrollbar-thumb { background:#c7c9e0; border-radius:6px; }
+  </style>
+</head>
+
+<body class="text-slate-800 font-sans antialiased min-h-screen">
+
+  <!-- ░░ Pantalla de bloqueo (protección) ░░ -->
+  <div id="lock" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-iris-700 via-iris-600 to-violet-600">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7 text-center">
+      <div class="w-14 h-14 rounded-2xl bg-iris-50 flex items-center justify-center mx-auto mb-3">
+        <i class="bi bi-shield-lock-fill text-2xl text-iris-600"></i>
+      </div>
+      <h1 class="text-xl font-extrabold text-ink-900 mb-1">Acceso restringido</h1>
+      <p class="text-sm text-slate-500 mb-5">Esta vista muestra los códigos personales. Ingresa la clave de administrador.</p>
+      <input id="lock-pass" type="password" placeholder="Clave de administrador"
+        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-iris-500 focus:bg-white transition-all mb-2">
+      <p id="lock-msg" class="text-xs text-rose-600 min-h-[16px] mb-3"></p>
+      <button id="lock-btn" class="w-full bg-iris-600 hover:bg-iris-700 text-white px-4 py-3 rounded-xl font-bold shadow-sm transition-colors flex items-center justify-center gap-2">
+        <i class="bi bi-unlock-fill"></i> Entrar
+      </button>
+    </div>
+  </div>
+
+  <!-- ░░ Contenido (oculto hasta validar) ░░ -->
+  <div id="app" class="hidden">
+    <header class="relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-iris-700 via-iris-600 to-violet-600"></div>
+      <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-4 min-w-0">
+            <div class="bg-white/15 ring-1 ring-white/30 text-white p-3 rounded-2xl shrink-0"><i class="bi bi-key-fill text-2xl"></i></div>
+            <div class="min-w-0">
+              <h1 class="text-white font-extrabold text-xl sm:text-2xl tracking-tight truncate">Códigos de participantes</h1>
+              <p class="text-white/70 text-sm">Envía a cada quien su código por WhatsApp</p>
+            </div>
+          </div>
+          <span class="hidden sm:flex items-center gap-2 bg-white/15 ring-1 ring-white/25 px-3 py-1.5 rounded-full">
+            <i class="bi bi-people-fill text-white/90"></i>
+            <span class="text-xs font-semibold text-white"><span id="total">0</span> personas</span>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 -mt-6">
+      <div class="relative mb-5">
+        <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input id="buscar" type="text" placeholder="Buscar por nombre o curso..."
+          class="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-iris-500 transition-all shadow-sm">
+      </div>
+      <div id="lista" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-ink-900 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-[60] font-medium">
+    <i id="toast-icon" class="bi bi-info-circle text-iris-400 text-lg"></i>
+    <span id="toast-msg">Notificación</span>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    const supabase = createClient(
+      "https://mdcayyifejqfvvoiphmi.supabase.co",
+      "sb_publishable_lEzIrscGXzVAJ-c00FT2GQ_BMuHsVmK"
+    );
+
+    const UNIFORMES_URL = "https://registroevento.netlify.app/uniformes.html";
+    let datos = [];
+
+    function toast(msg, iconClass = "bi-check-circle", ms = 2500) {
+      const el = document.getElementById("toast");
+      document.getElementById("toast-icon").className = `bi ${iconClass} text-iris-400 text-lg`;
+      document.getElementById("toast-msg").textContent = msg;
+      el.classList.add("toast-active");
+      setTimeout(() => el.classList.remove("toast-active"), ms);
+    }
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+    function mensaje(c) {
+      return `Hola ${c.nombre_apellido}, este es tu CÓDIGO personal de 5 dígitos para registrar tu uniforme: ${c.token}\n\n` +
+             `Complétalo aquí: ${UNIFORMES_URL}\n\nEs único y solo tuyo, no lo compartas.`;
+    }
+    function waHref(c) {
+      const tel = (c.telefono || "").replace(/\D/g, "");
+      const num = tel ? "593" + tel.replace(/^0/, "") : "";
+      return (num ? `https://wa.me/${num}` : "https://wa.me/") + `?text=${encodeURIComponent(mensaje(c))}`;
+    }
+
+    async function copiar(c) {
+      const texto = mensaje(c);
+      try {
+        await navigator.clipboard.writeText(texto);
+        toast("Mensaje copiado", "bi-clipboard-check text-emerald-400");
+      } catch {
+        // Respaldo para navegadores sin permiso de portapapeles
+        const ta = document.createElement("textarea");
+        ta.value = texto; ta.style.position = "fixed"; ta.style.left = "-9999px";
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); toast("Mensaje copiado", "bi-clipboard-check text-emerald-400"); }
+        catch { toast("No se pudo copiar", "bi-x-circle text-rose-400"); }
+        ta.remove();
+      }
+    }
+
+    function render() {
+      const q = document.getElementById("buscar").value.trim().toLowerCase();
+      const lista = document.getElementById("lista");
+      const rows = datos.filter(c =>
+        !q || c.nombre_apellido.toLowerCase().includes(q) || (c.curso || "").toLowerCase().includes(q));
+
+      if (rows.length === 0) {
+        lista.innerHTML = `<div class="col-span-full text-center text-slate-400 py-12"><i class="bi bi-inbox text-4xl block mb-2 opacity-50"></i>Sin resultados</div>`;
+        return;
+      }
+
+      lista.innerHTML = rows.map(c => `
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="h-10 w-10 rounded-full bg-iris-100 text-iris-600 flex items-center justify-center font-bold shrink-0">
+              ${esc(c.nombre_apellido.charAt(0).toUpperCase())}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-ink-900 truncate">${esc(c.nombre_apellido)}</div>
+              <div class="text-xs text-slate-400 truncate">${esc(c.curso || "—")}${c.telefono ? " · " + esc(c.telefono) : ""}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Código</div>
+              <div class="text-xl font-extrabold font-mono text-iris-700 tracking-widest">${esc(c.token)}</div>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button data-id="${c.id}" class="btn-copiar flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-sm font-semibold transition-colors">
+              <i class="bi bi-clipboard"></i> Copiar
+            </button>
+            <a href="${waHref(c)}" target="_blank" rel="noopener"
+               class="flex-1 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${c.telefono ? "" : "opacity-50 pointer-events-none"}"
+               title="${c.telefono ? "Enviar por WhatsApp" : "Sin teléfono"}">
+              <i class="bi bi-whatsapp"></i> WhatsApp
+            </a>
+          </div>
+        </div>`).join("");
+
+      lista.querySelectorAll(".btn-copiar").forEach(b =>
+        b.addEventListener("click", () => copiar(datos.find(x => x.id === Number(b.dataset.id)))));
+    }
+
+    async function entrar() {
+      const pass = document.getElementById("lock-pass").value;
+      const msg = document.getElementById("lock-msg");
+      const btn = document.getElementById("lock-btn");
+      if (!pass) { msg.textContent = "Ingresa la clave."; return; }
+      btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Verificando...';
+      const { data, error } = await supabase.rpc("obtener_codigos", { p_pass: pass });
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-unlock-fill"></i> Entrar';
+      if (error) { msg.textContent = "Clave incorrecta."; return; }
+      datos = data || [];
+      document.getElementById("total").textContent = datos.length;
+      document.getElementById("lock").classList.add("hidden");
+      document.getElementById("app").classList.remove("hidden");
+      render();
+    }
+
+    document.getElementById("lock-btn").addEventListener("click", entrar);
+    document.getElementById("lock-pass").addEventListener("keydown", e => { if (e.key === "Enter") entrar(); });
+    document.getElementById("buscar").addEventListener("input", render);
+    setTimeout(() => document.getElementById("lock-pass").focus(), 100);
+  </script>
+</body>
+</html>
