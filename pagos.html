@@ -308,6 +308,75 @@
   }
   .btn-copy:hover { border-color: var(--ink-2); color: var(--ink); }
 
+  /* ── Vista previa de la factura POS ── */
+  #factOverlay {
+    position: fixed; inset: 0; z-index: 110;
+    background: rgba(15,23,42,.55);
+    display: none; align-items: flex-start; justify-content: center;
+    padding: 30px 16px; overflow-y: auto;
+  }
+  #factOverlay.show { display: flex; }
+  .fact-card {
+    background: var(--card); border-radius: 16px;
+    width: 100%; max-width: 400px;
+    padding: 20px;
+    animation: pop .18s ease both;
+  }
+  .fact-img-wrap {
+    background: #e2e8f0; border-radius: 12px;
+    padding: 18px; text-align: center;
+    max-height: 60vh; overflow-y: auto;
+    margin-bottom: 14px;
+  }
+  .fact-img-wrap img {
+    width: 100%; max-width: 300px;
+    box-shadow: 0 4px 16px rgba(15,23,42,.18);
+  }
+  .fact-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fact-actions .btn-wa { flex: 1 1 100%; }
+  .fact-actions .btn-copy { flex: 1; }
+
+  /* ── Vista previa del reporte ── */
+  #repOverlay {
+    position: fixed; inset: 0; z-index: 115;
+    background: rgba(15,23,42,.55);
+    display: none; align-items: flex-start; justify-content: center;
+    padding: 24px 12px; overflow-y: auto;
+  }
+  #repOverlay.show { display: flex; }
+  .rep-card {
+    background: var(--card); border-radius: 16px;
+    width: 100%; max-width: 680px; padding: 20px;
+    animation: pop .18s ease both;
+  }
+  .rep-scope { font-size: .78rem; color: var(--ink-2); margin-bottom: 12px; }
+  .rep-totales {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 8px; margin-bottom: 14px;
+  }
+  @media (max-width: 560px) { .rep-totales { grid-template-columns: repeat(2, 1fr); } }
+  .rep-tot { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .rep-tot .t-l { font-size: .68rem; color: var(--ink-2); }
+  .rep-tot .t-v { font-size: 1rem; font-weight: 600; }
+  .rep-tabla-wrap {
+    border: 1px solid var(--line); border-radius: 10px;
+    overflow: auto; max-height: 46vh; margin-bottom: 14px;
+  }
+  table.rep-tabla { width: 100%; border-collapse: collapse; font-size: .8rem; }
+  .rep-tabla th {
+    position: sticky; top: 0; background: var(--ink); color: #fff;
+    text-align: left; padding: 7px 9px; font-weight: 600; font-size: .7rem;
+    white-space: nowrap;
+  }
+  .rep-tabla td { padding: 6px 9px; border-top: 1px solid var(--line); }
+  .rep-tabla td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .rep-tabla tr.row-pagado td { color: var(--ink-3); }
+  .rep-tabla td.est-pagado  { color: var(--good); font-weight: 600; }
+  .rep-tabla td.est-parcial { color: var(--warn); font-weight: 600; }
+  .rep-actions { display: flex; gap: 8px; }
+  .rep-actions .btn-save { flex: 2; }
+  .rep-actions .btn-copy { flex: 1; }
+
   .m-err { font-size: .76rem; color: var(--bad); min-height: 16px; display: block; margin-top: 8px; }
 
   /* ── Toast ── */
@@ -412,7 +481,7 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-1.607zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
         Enviar recibo
       </a>
-      <button class="btn-copy" id="btnCopy" type="button">Copiar</button>
+      <button class="btn-copy" id="btnFactura" type="button">🧾 Factura</button>
     </div>
 
     <div id="mForm">
@@ -436,6 +505,42 @@
   </div>
 </div>
 
+<!-- Vista previa de la factura -->
+<div id="factOverlay">
+  <div class="fact-card">
+    <div class="m-head">
+      <h3>Factura</h3>
+      <button class="m-close" id="factClose" type="button">✕</button>
+    </div>
+    <div class="fact-img-wrap"><img id="factImg" alt="Factura"></div>
+    <div class="fact-actions">
+      <button class="btn-wa" id="factWhatsapp" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-1.607zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+        Enviar por WhatsApp
+      </button>
+      <button class="btn-copy" id="factDescargar" type="button">Descargar</button>
+      <button class="btn-copy" id="factImprimir" type="button">Imprimir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vista previa del reporte -->
+<div id="repOverlay">
+  <div class="rep-card">
+    <div class="m-head">
+      <h3>Reporte de pagos · Quinto A</h3>
+      <button class="m-close" id="repClose" type="button">✕</button>
+    </div>
+    <div class="rep-scope" id="repScope"></div>
+    <div class="rep-totales" id="repTotales"></div>
+    <div class="rep-tabla-wrap"><table class="rep-tabla" id="repTabla"></table></div>
+    <div class="rep-actions">
+      <button class="btn-save" id="repDescargar" type="button">Descargar PDF</button>
+      <button class="btn-copy" id="repCerrar" type="button">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 
 let participantes = [];   // registro_eventos con participa = true
@@ -455,12 +560,12 @@ function esc(s) {
     ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 
-function toast(msg, isErr = false) {
+function toast(msg, isErr = false, duracion = 4200) {
   const el = document.createElement('div');
   el.className = 'toast' + (isErr ? ' err' : '');
   el.textContent = msg;
   $('toastArea').appendChild(el);
-  setTimeout(() => el.remove(), 4200);
+  setTimeout(() => el.remove(), duracion);
 }
 
 /* ── Estado de pago de una persona ── */
@@ -554,15 +659,28 @@ function filaHTML(p, i) {
     </div>`;
 }
 
-function render() {
-  const q = $('buscar').value.trim().toLowerCase();
-  const lista = $('lista');
+const ESTADO_LABEL = { pendiente: 'Pendiente', parcial: 'Abono parcial', pagado: 'PAGADO', sinpedido: 'Sin pedido' };
 
-  const filtrados = participantes.map(p => ({ p, i: infoPago(p) })).filter(({ p, i }) => {
+/* ── Participantes según los filtros activos (buscador + chip de estado) ── */
+function obtenerFiltrados() {
+  const q = $('buscar').value.trim().toLowerCase();
+  return participantes.map(p => ({ p, i: infoPago(p) })).filter(({ p, i }) => {
     const mTexto  = !q || p.nombre_apellido.toLowerCase().includes(q);
     const mEstado = !estadoFiltro || i.estado === estadoFiltro;
     return mTexto && mEstado;
   });
+}
+
+/* ── Texto que describe el filtro activo (para el reporte) ── */
+function filtroActivoTexto() {
+  const q = $('buscar').value.trim();
+  const chip = { '': 'Todos', pendiente: 'Pendientes', parcial: 'Abono parcial', pagado: 'Pagados', sinpedido: 'Sin pedido' }[estadoFiltro] || 'Todos';
+  return q ? `${chip} · búsqueda: "${q}"` : chip;
+}
+
+function render() {
+  const lista = $('lista');
+  const filtrados = obtenerFiltrados();
 
   if (!filtrados.length) {
     lista.innerHTML = '<div class="empty">No se encontraron registros.</div>';
@@ -662,37 +780,216 @@ function fechaCorta(iso) {
 
 function textoRecibo(p, i, hist) {
   const lineas = [
-    '🧾 *RECIBO DE PAGO — UNIFORME*',
-    '━━━━━━━━━━━━━━━',
-    `👤 ${p.nombre_apellido}`,
-    `🏫 ${p.curso || '—'}`,
-    `👕 ${p.tipo_pedido || 'Pedido sin definir'}${i.costo !== null ? ' — ' + fmt(i.costo) : ''}`,
+    'RECIBO DE PAGO - UNIFORME',
+    '--------------------------',
+    `Nombre: ${p.nombre_apellido}`,
+    `Curso: ${p.curso || '-'}`,
+    `Pedido: ${p.tipo_pedido || 'Sin definir'}${i.costo !== null ? ' (' + fmt(i.costo) + ')' : ''}`,
     '',
-    '*Abonos:*',
-    ...hist.map(x => `  • ${fechaCorta(x.created_at)} — ${fmt(toCents(x.monto))}${x.nota ? ' (' + x.nota + ')' : ''}`),
+    'Abonos:',
+    ...hist.map(x => `- ${fechaCorta(x.created_at)}: ${fmt(toCents(x.monto))}${x.nota ? ' (' + x.nota + ')' : ''}`),
     '',
-    `*Total abonado:* ${fmt(i.abonado)}`
+    `Total abonado: ${fmt(i.abonado)}`
   ];
   if (i.saldo !== null) {
     lineas.push(i.saldo === 0
-      ? '✅ *PAGADO POR COMPLETO. ¡Gracias!* 🙌'
-      : `⏳ *Saldo pendiente:* ${fmt(i.saldo)}`);
+      ? 'PAGADO POR COMPLETO. Gracias! 🙌'
+      : `Saldo pendiente: ${fmt(i.saldo)}`);
   }
-  lineas.push('━━━━━━━━━━━━━━━', `Emitido: ${fechaCorta(new Date().toISOString())}`);
+  lineas.push('--------------------------', `Emitido: ${fechaCorta(new Date().toISOString())}`);
   return lineas.join('\n');
 }
 
-$('btnCopy').addEventListener('click', async () => {
+/* ── Factura en imagen (ancho 58 mm de impresora POS, 384 px) ── */
+const FACT = { W: 384, PAD: 16, LH: 22, SCALE: 2, FONT: 'Consolas, "Courier New", monospace' };
+let facturaDataUrl = null;
+let facturaNombre = '';
+
+function fontStr(size, bold) { return `${bold ? 'bold ' : ''}${size}px ${FACT.FONT}`; }
+
+// Parte el texto en líneas que quepan en el ancho del ticket
+function wrapText(ctx, text, size, bold) {
+  ctx.font = fontStr(size, bold);
+  const max = FACT.W - FACT.PAD * 2;
+  const out = [];
+  let linea = '';
+  for (const palabra of String(text).split(' ')) {
+    const prueba = linea ? linea + ' ' + palabra : palabra;
+    if (ctx.measureText(prueba).width <= max) linea = prueba;
+    else { if (linea) out.push(linea); linea = palabra; }
+  }
+  if (linea) out.push(linea);
+  return out.length ? out : [''];
+}
+
+function generarFactura(p, i, hist) {
+  // 1) Armar las filas del ticket
+  const rows = [];
+  const sep = () => rows.push({ sep: true });
+  const linea = (text, opts = {}) => rows.push({ text, size: 15, align: 'left', ...opts });
+  const kv = (left, right, bold = false) => rows.push({ kv: true, left, right, bold });
+
+  linea('UNIFORMES · QUINTO A', { align: 'center', bold: true, size: 17 });
+  linea('RECIBO DE PAGO', { align: 'center', size: 14 });
+  sep();
+  linea(p.nombre_apellido.toUpperCase(), { bold: true });
+  linea(p.tipo_pedido || 'Pedido sin definir');
+  sep();
+  linea('ABONOS', { bold: true, size: 14 });
+  hist.forEach(x => {
+    kv(fechaCorta(x.created_at), fmt(toCents(x.monto)));
+    if (x.nota) linea('· ' + x.nota, { size: 13 });
+  });
+  sep();
+  if (i.costo !== null) kv('COSTO', fmt(i.costo));
+  kv('ABONADO', fmt(i.abonado));
+  if (i.saldo !== null) kv('SALDO', fmt(i.saldo), true);
+  sep();
+  if (i.saldo === 0) linea('** PAGADO COMPLETO **', { align: 'center', bold: true });
+  linea('Emitido: ' + new Date().toLocaleString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }), { align: 'center', size: 13 });
+  linea('¡Gracias por su pago!', { align: 'center', size: 13 });
+
+  // 2) Medir la altura total (envolviendo textos largos)
+  const medidor = document.createElement('canvas').getContext('2d');
+  let altura = FACT.PAD * 2;
+  const plano = []; // filas ya envueltas
+  rows.forEach(r => {
+    if (r.sep || r.kv) { plano.push(r); altura += FACT.LH; return; }
+    wrapText(medidor, r.text, r.size, r.bold).forEach(t => {
+      plano.push({ ...r, text: t });
+      altura += FACT.LH;
+    });
+  });
+
+  // 3) Dibujar
+  const canvas = document.createElement('canvas');
+  canvas.width = FACT.W * FACT.SCALE;
+  canvas.height = Math.ceil(altura) * FACT.SCALE;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(FACT.SCALE, FACT.SCALE);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, FACT.W, altura);
+  ctx.fillStyle = '#000000';
+  ctx.textBaseline = 'alphabetic';
+
+  let y = FACT.PAD + 15;
+  plano.forEach(r => {
+    if (r.sep) {
+      ctx.font = fontStr(15, false);
+      const nGuiones = Math.floor((FACT.W - FACT.PAD * 2) / ctx.measureText('-').width);
+      ctx.textAlign = 'left';
+      ctx.fillText('-'.repeat(nGuiones), FACT.PAD, y);
+    } else if (r.kv) {
+      ctx.font = fontStr(15, r.bold);
+      ctx.textAlign = 'left';
+      ctx.fillText(r.left, FACT.PAD, y);
+      ctx.textAlign = 'right';
+      ctx.fillText(r.right, FACT.W - FACT.PAD, y);
+    } else {
+      ctx.font = fontStr(r.size, r.bold);
+      ctx.textAlign = r.align === 'center' ? 'center' : 'left';
+      ctx.fillText(r.text, r.align === 'center' ? FACT.W / 2 : FACT.PAD, y);
+    }
+    y += FACT.LH;
+  });
+
+  return canvas.toDataURL('image/png');
+}
+
+$('btnFactura').addEventListener('click', () => {
   const p = participantes.find(x => x.id === modalId);
   if (!p) return;
   const i = infoPago(p);
   const hist = pagos.filter(x => x.registro_id === p.id);
-  try {
-    await navigator.clipboard.writeText(textoRecibo(p, i, hist));
-    toast('Recibo copiado al portapapeles.');
-  } catch {
-    toast('No se pudo copiar. Usa el botón de WhatsApp.', true);
+  facturaDataUrl = generarFactura(p, i, hist);
+  facturaNombre = `factura_${p.nombre_apellido.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.png`;
+  $('factImg').src = facturaDataUrl;
+  $('factOverlay').classList.add('show');
+});
+
+$('factClose').addEventListener('click', () => $('factOverlay').classList.remove('show'));
+$('factOverlay').addEventListener('click', e => { if (e.target === $('factOverlay')) $('factOverlay').classList.remove('show'); });
+
+function descargarFactura() {
+  const a = document.createElement('a');
+  a.href = facturaDataUrl;
+  a.download = facturaNombre;
+  a.click();
+}
+
+$('factDescargar').addEventListener('click', () => {
+  if (!facturaDataUrl) return;
+  descargarFactura();
+  toast('Factura descargada.');
+});
+
+/* ── dataURL PNG -> File (para navigator.share) ── */
+function dataUrlToFile(dataUrl, nombre) {
+  const [cabecera, base64] = dataUrl.split(',');
+  const mime = (cabecera.match(/data:(.*?);base64/) || [])[1] || 'image/png';
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
+  return new File([bytes], nombre, { type: mime });
+}
+
+/* ── Enviar la factura como imagen por WhatsApp ── */
+$('factWhatsapp').addEventListener('click', async () => {
+  if (!facturaDataUrl) return;
+  const p = participantes.find(x => x.id === modalId);
+  if (!p) return;
+  const i = infoPago(p);
+  const hist = pagos.filter(x => x.registro_id === p.id);
+
+  const file = dataUrlToFile(facturaDataUrl, facturaNombre);
+
+  // Ruta ideal (teléfono): menú de compartir con la imagen adjunta
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: 'Recibo de pago — Uniforme',
+        text: textoRecibo(p, i, hist)
+      });
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // el usuario canceló
+      toast('No se pudo compartir: ' + (err.message || err), true);
+    }
+    return;
   }
+
+  // Respaldo (escritorio o sin soporte): descargar + abrir el chat para adjuntar a mano
+  descargarFactura();
+  const nota = 'Hola, te comparto tu recibo de pago del uniforme (adjunto la imagen que acabo de descargar).';
+  const url = p.whatsapp_link
+    ? `${p.whatsapp_link}?text=${encodeURIComponent(nota)}`
+    : `https://wa.me/?text=${encodeURIComponent(nota)}`;
+  window.open(url, '_blank');
+  toast('Descargué la factura. Adjúntala en el chat de WhatsApp que se abrió.', false, 7000);
+});
+
+$('factImprimir').addEventListener('click', () => {
+  if (!facturaDataUrl) return;
+
+  // Iframe oculto construido con DOM (sin document.write ni HTML como texto)
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  const style = doc.createElement('style');
+  style.textContent = '@page{margin:0}body{margin:0}img{width:58mm;display:block}';
+  doc.head.appendChild(style);
+
+  const img = doc.createElement('img');
+  img.onload = () => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => iframe.remove(), 1000);
+  };
+  img.src = facturaDataUrl;
+  doc.body.appendChild(img);
 });
 
 /* ── Botones rápidos ── */
@@ -774,70 +1071,124 @@ async function eliminarPago(pagoId) {
   await cargar();
 }
 
-/* ── Reporte PDF ── */
+/* ── Datos del reporte según el filtro activo (mismos que la lista) ── */
+function datosReporte() {
+  const items = obtenerFiltrados();
+  // pagados al final, igual que en la lista
+  const ordenados = [
+    ...items.filter(x => x.i.estado !== 'pagado'),
+    ...items.filter(x => x.i.estado === 'pagado')
+  ];
+
+  let esperado = 0, recaudado = 0, pagados = 0, conCosto = 0;
+  const filas = ordenados.map(({ p, i }) => {
+    recaudado += i.abonado;
+    if (i.costo !== null) { conCosto++; esperado += i.costo; if (i.estado === 'pagado') pagados++; }
+    return {
+      estado: i.estado,
+      cols: [
+        p.nombre_apellido,
+        p.tipo_pedido || '—',
+        i.costo === null ? '—' : fmt(i.costo),
+        fmt(i.abonado),
+        i.saldo === null ? '—' : fmt(i.saldo),
+        ESTADO_LABEL[i.estado]
+      ]
+    };
+  });
+
+  return {
+    filas,
+    scope: filtroActivoTexto(),
+    totales: { esperado, recaudado, porCobrar: Math.max(esperado - recaudado, 0), pagados, conCosto }
+  };
+}
+
+let reporteActual = null;
+
+/* ── Abrir la vista previa del reporte ── */
 $('btnPdf').addEventListener('click', () => {
-  const btn = $('btnPdf');
+  const d = datosReporte();
+  if (!d.filas.length) { toast('No hay registros para el filtro actual.', true); return; }
+  reporteActual = d;
+
+  $('repScope').textContent = `Filtro: ${d.scope} · ${d.filas.length} persona(s)`;
+
+  const t = d.totales;
+  $('repTotales').innerHTML = `
+    <div class="rep-tot"><div class="t-l">Recaudado</div><div class="t-v">${fmt(t.recaudado)}</div></div>
+    <div class="rep-tot"><div class="t-l">Por cobrar</div><div class="t-v">${fmt(t.porCobrar)}</div></div>
+    <div class="rep-tot"><div class="t-l">Total esperado</div><div class="t-v">${fmt(t.esperado)}</div></div>
+    <div class="rep-tot"><div class="t-l">Pagados</div><div class="t-v">${t.pagados} / ${t.conCosto}</div></div>`;
+
+  $('repTabla').innerHTML = `
+    <thead><tr>
+      <th>Nombre</th><th>Pedido</th><th>Costo</th><th>Abonado</th><th>Saldo</th><th>Estado</th>
+    </tr></thead>
+    <tbody>${d.filas.map(f => {
+      const estCls = f.estado === 'pagado' ? 'est-pagado' : (f.estado === 'parcial' ? 'est-parcial' : '');
+      return `<tr class="${f.estado === 'pagado' ? 'row-pagado' : ''}">
+        <td>${esc(f.cols[0])}</td>
+        <td>${esc(f.cols[1])}</td>
+        <td class="num">${esc(f.cols[2])}</td>
+        <td class="num">${esc(f.cols[3])}</td>
+        <td class="num">${esc(f.cols[4])}</td>
+        <td class="${estCls}">${esc(f.cols[5])}</td>
+      </tr>`;
+    }).join('')}</tbody>`;
+
+  $('repOverlay').classList.add('show');
+});
+
+/* ── Generar y descargar el PDF ── */
+function descargarReportePdf(d) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const hoy = new Date().toLocaleDateString('es-EC', { day: 'numeric', month: 'long', year: 'numeric' });
+  const t = d.totales;
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(30, 41, 59);
+  doc.text('Pagos de Uniformes — Quinto A', 14, 18);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+  doc.text(`Generado el ${hoy}  ·  Solo camisa $10 · Equipo completo $15`, 14, 24);
+  doc.text(`Filtro: ${d.scope}  ·  ${d.filas.length} persona(s)`, 14, 29);
+
+  doc.setFontSize(10); doc.setTextColor(30, 41, 59);
+  doc.text(`Recaudado: ${fmt(t.recaudado)}     Por cobrar: ${fmt(t.porCobrar)}     Total esperado: ${fmt(t.esperado)}     Pagados: ${t.pagados} / ${t.conCosto}`, 14, 36);
+
+  doc.autoTable({
+    startY: 41,
+    head: [['Nombre', 'Pedido', 'Costo', 'Abonado', 'Saldo', 'Estado']],
+    body: d.filas.map(f => f.cols),
+    styles: { font: 'helvetica', fontSize: 8.5, textColor: [30, 41, 59], cellPadding: 2.2 },
+    headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' } },
+    didParseCell: (data) => {
+      if (data.section !== 'body') return;
+      const f = d.filas[data.row.index];
+      if (f.estado === 'pagado') data.cell.styles.textColor = [148, 163, 184];
+      if (data.column.index === 5) {
+        if (f.estado === 'pagado')  data.cell.styles.textColor = [21, 128, 61];
+        if (f.estado === 'parcial') data.cell.styles.textColor = [161, 98, 7];
+        data.cell.styles.fontStyle = 'bold';
+      }
+    },
+    didDrawPage: () => {
+      doc.setFontSize(8); doc.setTextColor(148, 163, 184);
+      doc.text(`Página ${doc.internal.getNumberOfPages()}`, 200, 290, { align: 'right' });
+    }
+  });
+
+  doc.save(`pagos_uniformes_quintoA_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+$('repDescargar').addEventListener('click', () => {
+  if (!reporteActual) return;
+  const btn = $('repDescargar');
   btn.disabled = true;
   try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const hoy = new Date().toLocaleDateString('es-EC', { day: 'numeric', month: 'long', year: 'numeric' });
-
-    // Totales
-    let esperado = 0, recaudado = 0, pagados = 0, conCosto = 0;
-    const filas = participantes.map(p => {
-      const i = infoPago(p);
-      recaudado += i.abonado;
-      if (i.costo !== null) { conCosto++; esperado += i.costo; if (i.estado === 'pagado') pagados++; }
-      const estadoTxt = { pendiente: 'Pendiente', parcial: 'Abono parcial', pagado: 'PAGADO', sinpedido: 'Sin pedido' }[i.estado];
-      return {
-        estado: i.estado,
-        cols: [
-          p.nombre_apellido,
-          p.tipo_pedido || '—',
-          i.costo === null ? '—' : fmt(i.costo),
-          fmt(i.abonado),
-          i.saldo === null ? '—' : fmt(i.saldo),
-          estadoTxt
-        ]
-      };
-    });
-
-    // Encabezado
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(30, 41, 59);
-    doc.text('Pagos de Uniformes — Quinto A', 14, 18);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
-    doc.text(`Generado el ${hoy}  ·  Solo camisa $10 · Equipo completo $15`, 14, 24);
-
-    // Resumen contable
-    doc.setFontSize(10); doc.setTextColor(30, 41, 59);
-    doc.text(`Recaudado: ${fmt(recaudado)}     Por cobrar: ${fmt(Math.max(esperado - recaudado, 0))}     Total esperado: ${fmt(esperado)}     Pagados: ${pagados} / ${conCosto}`, 14, 32);
-
-    doc.autoTable({
-      startY: 38,
-      head: [['Nombre', 'Pedido', 'Costo', 'Abonado', 'Saldo', 'Estado']],
-      body: filas.map(f => f.cols),
-      styles: { font: 'helvetica', fontSize: 8.5, textColor: [30, 41, 59], cellPadding: 2.2 },
-      headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' } },
-      didParseCell: (data) => {
-        if (data.section !== 'body') return;
-        const f = filas[data.row.index];
-        if (f.estado === 'pagado') data.cell.styles.textColor = [148, 163, 184]; // pagados en gris
-        if (data.column.index === 5) {
-          if (f.estado === 'pagado')  data.cell.styles.textColor = [21, 128, 61];
-          if (f.estado === 'parcial') data.cell.styles.textColor = [161, 98, 7];
-          data.cell.styles.fontStyle = 'bold';
-        }
-      },
-      didDrawPage: () => {
-        doc.setFontSize(8); doc.setTextColor(148, 163, 184);
-        doc.text(`Página ${doc.internal.getNumberOfPages()}`, 200, 290, { align: 'right' });
-      }
-    });
-
-    doc.save(`pagos_uniformes_quintoA_${new Date().toISOString().slice(0, 10)}.pdf`);
+    descargarReportePdf(reporteActual);
     toast('Reporte PDF descargado.');
   } catch (e) {
     toast('No se pudo generar el PDF: ' + e.message, true);
@@ -845,6 +1196,10 @@ $('btnPdf').addEventListener('click', () => {
     btn.disabled = false;
   }
 });
+
+$('repClose').addEventListener('click', () => $('repOverlay').classList.remove('show'));
+$('repCerrar').addEventListener('click', () => $('repOverlay').classList.remove('show'));
+$('repOverlay').addEventListener('click', e => { if (e.target === $('repOverlay')) $('repOverlay').classList.remove('show'); });
 
 /* ── Filtros ── */
 $('buscar').addEventListener('input', render);
@@ -858,7 +1213,12 @@ $('chips').querySelectorAll('.chip').forEach(ch =>
 
 $('mClose').addEventListener('click', cerrarModal);
 $('overlay').addEventListener('click', e => { if (e.target === $('overlay')) cerrarModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if ($('repOverlay').classList.contains('show')) $('repOverlay').classList.remove('show');
+  else if ($('factOverlay').classList.contains('show')) $('factOverlay').classList.remove('show');
+  else cerrarModal();
+});
 
 /* ── Init + tiempo real ── */
 window.addEventListener('DOMContentLoaded', async () => {
