@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apoyo — Reina del Curso</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+  window.supabase = createClient(
+    'https://mdcayyifejqfvvoiphmi.supabase.co',
+    'sb_publishable_lEzIrscGXzVAJ-c00FT2GQ_BMuHsVmK'
+  );
+</script>
+
+<style>
+  :root {
+    --gold:      #f59e0b;
+    --gold-dark: #d97706;
+    --gold-soft: #fffbeb;
+    --blue:      #2563eb;
+    --blue-dark: #1d4ed8;
+    --green:     #16a34a;
+    --red:       #dc2626;
+    --slate-800: #1e293b;
+    --slate-500: #64748b;
+    --slate-200: #e2e8f0;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(140deg, #fffbeb 0%, #fef3c7 45%, #fdf2f8 100%);
+    padding: 32px 16px;
+    color: var(--slate-800);
+  }
+
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .page-head {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 12px 48px rgba(217,119,6,.14), 0 2px 8px rgba(0,0,0,.06);
+    padding: 1.8rem 1.8rem 1.5rem;
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .head-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    border-radius: 16px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+    color: #fff; font-size: 1.45rem;
+    box-shadow: 0 4px 14px rgba(217,119,6,.35);
+  }
+  .page-head h1 { font-size: 1.45rem; font-weight: 700; margin: 0 0 4px; }
+  .page-head p  { font-size: .85rem; color: var(--slate-500); margin: 0; }
+  .cuota-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    margin-top: 10px;
+    background: var(--gold-soft); border: 1px solid #fcd34d;
+    color: #92400e; font-weight: 700; font-size: .85rem;
+    padding: 6px 16px; border-radius: 99px;
+  }
+
+  /* ── Stats ── */
+  .stats-row { display: flex; gap: 10px; margin-top: 16px; }
+  .stat {
+    flex: 1; background: #f8fafc;
+    border: 1.5px solid var(--slate-200); border-radius: 14px;
+    padding: 12px 8px; text-align: center;
+  }
+  .stat .st-val { font-size: 1.3rem; font-weight: 700; color: var(--blue-dark); }
+  .stat .st-val.gold  { color: var(--gold-dark); }
+  .stat .st-val.green { color: var(--green); }
+  .stat .st-lbl {
+    font-size: .68rem; color: var(--slate-500);
+    text-transform: uppercase; letter-spacing: .5px;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+
+  /* ── Botón de reporte ── */
+  .btn-reporte {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 16px;
+    background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+    color: #fff; padding: .7rem 1.4rem; border-radius: 12px;
+    font-weight: 700; font-size: .88rem; border: none; cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    box-shadow: 0 4px 14px rgba(37,99,235,.3);
+    transition: opacity .2s, transform .1s;
+  }
+  .btn-reporte:hover:not(:disabled)  { opacity: .9; }
+  .btn-reporte:active:not(:disabled) { transform: scale(.97); }
+  .btn-reporte:disabled { opacity: .6; cursor: not-allowed; }
+
+  /* ── Tabla oculta para captura de imagen ── */
+  #captura-wrapper {
+    position: fixed; left: -9999px; top: 0;
+    background: #fff; padding: 28px;
+    font-family: 'Sora', sans-serif;
+    width: 560px;
+  }
+
+  /* ── Visor de imagen ── */
+  #visorImg { max-width: 100%; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+  .visor-cargando { text-align: center; color: var(--slate-500); padding: 40px 0; }
+  .visor-cargando i { font-size: 1.6rem; }
+  .visor-body { background: #f1f5f9; border-radius: 14px; padding: 14px; text-align: center; max-height: 60vh; overflow: auto; }
+  .visor-acciones { display: flex; gap: 10px; margin-top: 14px; }
+  .visor-acciones .btn-reg { padding: .72rem; font-size: .9rem; }
+  .btn-reg.btn-copiar { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); box-shadow: 0 4px 14px rgba(37,99,235,.3); }
+  .btn-reg.btn-verde  { background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 4px 14px rgba(22,163,74,.3); }
+
+  /* ── Formulario de alta ── */
+  .add-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 6px 24px rgba(217,119,6,.10), 0 2px 6px rgba(0,0,0,.05);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .add-card h6 {
+    font-size: .92rem; font-weight: 700; margin: 0 0 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .add-card h6 i { color: var(--gold-dark); }
+  .add-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+  .add-grid .fld-nombre { flex: 1 1 200px; }
+
+  .reg-input {
+    width: 100%;
+    border: 1.5px solid var(--slate-200);
+    border-radius: 11px;
+    padding: .72rem 1rem;
+    font-family: 'Sora', sans-serif;
+    font-size: .93rem; color: var(--slate-800);
+    background: #f8fafc; outline: none;
+    transition: border-color .18s, box-shadow .18s, background .18s;
+  }
+  .reg-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3.5px rgba(245,158,11,.15); background: #fff; }
+  #addNombre, #edNombre { text-transform: uppercase; }
+  #addNombre::placeholder, #edNombre::placeholder { text-transform: none; }
+
+  .btn-add {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: #fff; padding: .72rem 1.4rem; border-radius: 11px;
+    font-weight: 700; font-size: .93rem; border: none; cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    box-shadow: 0 4px 14px rgba(217,119,6,.3);
+    transition: opacity .2s, transform .1s;
+    white-space: nowrap;
+  }
+  .btn-add:hover:not(:disabled)  { opacity: .9; }
+  .btn-add:active:not(:disabled) { transform: scale(.97); }
+  .btn-add:disabled { opacity: .6; cursor: not-allowed; }
+
+  /* ── Search ── */
+  .search-wrap { position: relative; margin-bottom: 16px; }
+  .search-wrap i {
+    position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+    color: var(--slate-500); pointer-events: none; font-size: .9rem;
+  }
+  .search-box {
+    width: 100%;
+    border: 1.5px solid var(--slate-200);
+    border-radius: 13px;
+    padding: .8rem 1rem .8rem 2.6rem;
+    font-family: 'Sora', sans-serif;
+    font-size: .93rem;
+    background: #fff;
+    outline: none;
+    transition: border-color .18s, box-shadow .18s;
+  }
+  .search-box:focus { border-color: var(--gold); box-shadow: 0 0 0 3.5px rgba(245,158,11,.15); }
+
+  /* ── Person card ── */
+  .person {
+    background: #fff;
+    border: 1.5px solid var(--slate-200);
+    border-radius: 16px;
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+    transition: border-color .15s, box-shadow .15s;
+    margin-bottom: 10px;
+  }
+  .person:hover { border-color: var(--gold); box-shadow: 0 6px 20px rgba(217,119,6,.14); }
+
+  .avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--gold-soft); color: var(--gold-dark);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; flex-shrink: 0;
+  }
+  .person-info { flex: 1; min-width: 0; }
+  .person-name { font-weight: 600; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .person-sub  { font-size: .76rem; color: var(--slate-500); }
+
+  .badge-state {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: .7rem; font-weight: 600;
+    padding: 5px 10px; border-radius: 20px;
+    white-space: nowrap; flex-shrink: 0; cursor: pointer;
+    border: 1px solid transparent;
+    transition: transform .1s, box-shadow .15s;
+  }
+  .badge-state:active { transform: scale(.95); }
+  .badge-pend { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+  .badge-pend:hover { box-shadow: 0 2px 8px rgba(245,158,11,.3); }
+  .badge-done { background: #f0fdf4; color: #14532d; border-color: #86efac; }
+  .badge-done:hover { box-shadow: 0 2px 8px rgba(22,163,74,.25); }
+
+  .row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 10px;
+    border: 1.5px solid var(--slate-200);
+    background: #f8fafc; color: var(--slate-500);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: .85rem;
+    transition: border-color .15s, color .15s, background .15s, transform .1s;
+  }
+  .icon-btn:hover  { border-color: var(--blue); color: var(--blue-dark); background: #eff6ff; }
+  .icon-btn.danger:hover { border-color: var(--red); color: var(--red); background: #fff5f5; }
+  .icon-btn:active { transform: scale(.92); }
+
+  .empty { text-align: center; color: var(--slate-500); padding: 40px 0; }
+
+  /* ── Modal ── */
+  .modal-content { border: none; border-radius: 20px; }
+
+  .reg-label {
+    font-size: .8rem; font-weight: 600; color: var(--slate-500);
+    text-transform: uppercase; letter-spacing: .5px;
+    margin-bottom: 5px; display: block;
+  }
+  .field-msg { font-size: .75rem; margin-top: 4px; min-height: 16px; display: block; color: var(--red); }
+
+  .obs-check {
+    display: flex; align-items: center; gap: 9px;
+    font-size: .9rem; color: var(--slate-800);
+    padding: 9px 12px; cursor: pointer;
+    border: 1.5px solid var(--slate-200); border-radius: 11px; background: #f8fafc;
+    transition: border-color .15s, background .15s;
+  }
+  .obs-check:hover { border-color: #86efac; background: #f0fdf4; }
+  .obs-check input { width: 18px; height: 18px; accent-color: var(--green); cursor: pointer; }
+
+  .btn-reg {
+    width: 100%;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    color: #fff; padding: .85rem; border-radius: 13px;
+    font-weight: 700; font-size: 1rem; border: none; cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    box-shadow: 0 4px 14px rgba(217,119,6,.3);
+    transition: opacity .2s, transform .1s;
+  }
+  .btn-reg:hover:not(:disabled)  { opacity: .9; }
+  .btn-reg:active:not(:disabled) { transform: scale(.98); }
+  .btn-reg:disabled { opacity: .6; cursor: not-allowed; }
+  .btn-reg.btn-danger-soft { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 14px rgba(220,38,38,.3); }
+  .btn-reg.btn-neutral { background: #f1f5f9; color: var(--slate-800); box-shadow: none; }
+
+  .spinner-sm {
+    display: inline-block; width: 15px; height: 15px;
+    border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+    border-radius: 50%; animation: spin .65s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Toast ── */
+  #toastArea {
+    position: fixed; top: 20px; right: 20px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+  }
+  .toast-item {
+    min-width: 280px; max-width: 340px; border-radius: 14px; padding: 14px 18px;
+    font-size: .88rem; display: flex; align-items: flex-start; gap: 11px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.14); pointer-events: all;
+    animation: toastIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .toast-item.hide { animation: toastOut .3s ease forwards; }
+  .toast-success { background: #f0fdf4; border: 1.5px solid #86efac; color: #14532d; }
+  .toast-error   { background: #fff5f5; border: 1.5px solid #fca5a5; color: #7f1d1d; }
+  .toast-warning { background: #fffbeb; border: 1.5px solid #fcd34d; color: #78350f; }
+  .toast-icon { font-size: 1.05rem; flex-shrink: 0; margin-top: 2px; }
+  .toast-body { flex: 1; line-height: 1.45; }
+  .toast-body strong { display: block; font-size: .92rem; margin-bottom: 2px; }
+  @keyframes toastIn  { from { opacity:0; transform: translateX(30px) scale(.95); } to { opacity:1; transform: none; } }
+  @keyframes toastOut { from { opacity:1; transform: none; } to { opacity:0; transform: translateX(30px) scale(.95); } }
+</style>
+</head>
+
+<body>
+
+<div id="toastArea"></div>
+
+<div class="wrap">
+
+  <div class="page-head">
+    <div class="head-icon"><i class="fa-solid fa-crown"></i></div>
+    <h1>Apoyo para la Reina del Curso</h1>
+    <p>Anota aquí a cada persona que apoya con la cuota.</p>
+    <div class="cuota-pill"><i class="fa-solid fa-coins"></i> Cuota: $2.00 por persona</div>
+
+    <div class="stats-row">
+      <div class="stat">
+        <div class="st-val" id="stTotal">0</div>
+        <div class="st-lbl"><i class="fa-solid fa-users"></i> Apoyan</div>
+      </div>
+      <div class="stat">
+        <div class="st-val green" id="stRecaudado">$0</div>
+        <div class="st-lbl"><i class="fa-solid fa-sack-dollar"></i> Recaudado</div>
+      </div>
+    </div>
+
+    <button class="btn-reporte" id="btnReporte"><i class="fa-solid fa-image"></i> Generar reporte en imagen</button>
+  </div>
+
+  <div class="add-card">
+    <h6><i class="fa-solid fa-user-plus"></i> Agregar participante</h6>
+    <div class="add-grid">
+      <div class="fld-nombre"><input id="addNombre" class="reg-input" maxlength="60" placeholder="Nombre y apellido" autocomplete="off"></div>
+      <button class="btn-add" id="btnAdd"><i class="fa-solid fa-plus"></i> Agregar</button>
+    </div>
+    <span class="field-msg" id="msgAdd"></span>
+    <label class="obs-check" style="margin-top:4px;">
+      <input type="checkbox" id="addPagado" checked> Ya entregó los <strong>$2</strong>
+    </label>
+  </div>
+
+  <div class="search-wrap">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="text" id="buscar" class="search-box" placeholder="Buscar por nombre...">
+  </div>
+
+  <div id="lista"><div class="empty">Cargando participantes…</div></div>
+
+</div>
+
+<!-- Tabla oculta para captura de imagen -->
+<div id="captura-wrapper">
+  <div style="text-align:center;margin-bottom:14px;">
+    <div style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:1.1rem;margin-bottom:8px;">
+      <i class="fa-solid fa-crown"></i>
+    </div>
+    <div style="font-size:17px;font-weight:800;color:#92400e;">APOYO PARA LA REINA DEL CURSO</div>
+    <div id="captura-subtitulo" style="font-size:11px;color:#64748b;margin-top:4px;"></div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;color:#1e293b;">
+    <thead>
+      <tr style="background:#d97706;color:#fff;">
+        <th style="padding:9px 10px;text-align:left;">#</th>
+        <th style="padding:9px 10px;text-align:left;">NOMBRE</th>
+        <th style="padding:9px 10px;text-align:center;">ESTADO</th>
+        <th style="padding:9px 10px;text-align:center;">MONTO</th>
+      </tr>
+    </thead>
+    <tbody id="captura-body"></tbody>
+  </table>
+  <div id="captura-totales" style="margin-top:12px;padding:10px 12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;font-size:12px;font-weight:700;color:#92400e;text-align:center;"></div>
+  <div style="margin-top:10px;font-size:10px;color:#94a3b8;text-align:center;">Generado: <span id="captura-fecha"></span></div>
+</div>
+
+<!-- Modal visor de reporte -->
+<div class="modal fade" id="modalVisor" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-image" style="color:var(--gold-dark);"></i> Vista previa del reporte</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="visor-body">
+          <div class="visor-cargando" id="visorCargando"><i class="fa-solid fa-hourglass-half"></i><p style="margin:8px 0 0;font-size:.85rem;">Generando imagen…</p></div>
+          <img id="visorImg" style="display:none;" alt="Reporte">
+        </div>
+        <div class="visor-acciones">
+          <button class="btn-reg btn-neutral" data-bs-dismiss="modal">Cerrar</button>
+          <button class="btn-reg btn-copiar" id="btnCopiarImg" disabled><i class="fa-solid fa-copy"></i> Copiar</button>
+          <button class="btn-reg btn-verde" id="btnDescargarImg" disabled><i class="fa-solid fa-download"></i> Descargar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square" style="color:var(--gold-dark);"></i> Editar apoyo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="reg-label" for="edNombre">Nombre y apellido</label>
+          <input id="edNombre" class="reg-input" maxlength="60" autocomplete="off">
+        </div>
+        <div class="mb-3">
+          <label class="reg-label" for="edMonto">Monto ($)</label>
+          <input id="edMonto" class="reg-input" inputmode="decimal" autocomplete="off">
+        </div>
+        <div class="mb-3">
+          <label class="obs-check"><input type="checkbox" id="edPagado"> Ya entregó el dinero</label>
+        </div>
+        <span class="field-msg" id="msgEditar"></span>
+        <button class="btn-reg" id="btnGuardarEd"><i class="fa-solid fa-floppy-disk"></i> Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-body text-center pt-4">
+        <div style="font-size:1.8rem;color:var(--red);"><i class="fa-solid fa-trash-can"></i></div>
+        <p style="margin:10px 0 16px;">¿Eliminar a <strong id="delNombre"></strong> de la lista?</p>
+        <button class="btn-reg btn-danger-soft" id="btnConfirmDel" style="margin-bottom:8px;">Sí, eliminar</button>
+        <button class="btn-reg btn-neutral" data-bs-dismiss="modal">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+
+const CUOTA = 2;
+let apoyos = [];
+let editId = null;
+let delId  = null;
+let modalEd, modalDel;
+
+/* ── Toast ── */
+function toast(type, title, body = '', duration = 4500) {
+  const icons = {
+    success: '<i class="fa-solid fa-circle-check"></i>',
+    error:   '<i class="fa-solid fa-circle-xmark"></i>',
+    warning: '<i class="fa-solid fa-triangle-exclamation"></i>',
+    info:    '<i class="fa-solid fa-circle-info"></i>'
+  };
+  const area  = document.getElementById('toastArea');
+  const el = document.createElement('div');
+  el.className = `toast-item toast-${type}`;
+  el.innerHTML = `
+    <span class="toast-icon">${icons[type]}</span>
+    <div class="toast-body"><strong>${title}</strong>${body || ''}</div>`;
+  area.appendChild(el);
+  setTimeout(() => { el.classList.add('hide'); setTimeout(() => el.remove(), 320); }, duration);
+}
+
+/* ── Escape para evitar romper el HTML ── */
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function fmtMonto(n) {
+  const v = Number(n) || 0;
+  return '$' + (Number.isInteger(v) ? v : v.toFixed(2));
+}
+
+function fmtFecha(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('es-EC', { day: 'numeric', month: 'short' });
+}
+
+/* ── Cargar ── */
+async function cargar() {
+  const { data, error } = await window.supabase
+    .from('apoyos_reina').select('*').order('created_at', { ascending: false });
+  if (error) { toast('error', 'No se pudo cargar', error.message); return; }
+  apoyos = data || [];
+  actualizarStats();
+  render();
+}
+
+/* ── Stats + progreso ── */
+function actualizarStats() {
+  const total     = apoyos.length;
+  const recaudado = apoyos.filter(a => a.pagado).reduce((s, a) => s + (Number(a.monto) || 0), 0);
+
+  document.getElementById('stTotal').textContent     = total;
+  document.getElementById('stRecaudado').textContent = fmtMonto(recaudado);
+}
+
+/* ── Render lista ── */
+function render() {
+  const q = document.getElementById('buscar').value.trim().toLowerCase();
+  const lista = document.getElementById('lista');
+
+  const filtrados = apoyos.filter(a => !q || a.nombre.toLowerCase().includes(q));
+
+  if (filtrados.length === 0) {
+    lista.innerHTML = `<div class="empty">No se encontraron participantes.</div>`;
+    return;
+  }
+
+  lista.innerHTML = filtrados.map(a => {
+    const badge = a.pagado
+      ? `<span class="badge-state badge-done" data-toggle="${a.id}" title="Marcar como pendiente"><i class="fa-solid fa-check"></i> Pagado ${fmtMonto(a.monto)}</span>`
+      : `<span class="badge-state badge-pend" data-toggle="${a.id}" title="Marcar como pagado"><i class="fa-regular fa-clock"></i> Pendiente ${fmtMonto(a.monto)}</span>`;
+    return `
+      <div class="person">
+        <div class="avatar">${esc(a.nombre.charAt(0).toUpperCase())}</div>
+        <div class="person-info">
+          <div class="person-name">${esc(a.nombre)}</div>
+          <div class="person-sub">Anotado el ${fmtFecha(a.created_at)}</div>
+        </div>
+        ${badge}
+        <div class="row-actions">
+          <button class="icon-btn" data-edit="${a.id}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+          <button class="icon-btn danger" data-del="${a.id}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>`;
+  }).join('');
+
+  lista.querySelectorAll('[data-toggle]').forEach(el =>
+    el.addEventListener('click', () => togglePagado(Number(el.dataset.toggle))));
+  lista.querySelectorAll('[data-edit]').forEach(el =>
+    el.addEventListener('click', () => abrirEditar(Number(el.dataset.edit))));
+  lista.querySelectorAll('[data-del]').forEach(el =>
+    el.addEventListener('click', () => abrirEliminar(Number(el.dataset.del))));
+}
+
+/* ── CREATE ── */
+async function agregar() {
+  const inpNombre = document.getElementById('addNombre');
+  const pagado    = document.getElementById('addPagado').checked;
+  const msg       = document.getElementById('msgAdd');
+  const nombre    = inpNombre.value.trim().toUpperCase();
+
+  if (!nombre) { msg.textContent = 'Escribe el nombre del participante.'; inpNombre.focus(); return; }
+  if (apoyos.some(a => a.nombre.trim().toLowerCase() === nombre.toLowerCase())) {
+    msg.textContent = 'Esa persona ya está anotada en la lista.';
+    return;
+  }
+  msg.textContent = '';
+
+  const btn = document.getElementById('btnAdd');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-sm"></span> Agregando…';
+
+  const { error } = await window.supabase
+    .from('apoyos_reina')
+    .insert({ nombre, monto: CUOTA, pagado });
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-plus"></i> Agregar';
+
+  if (error) { toast('error', 'No se pudo agregar', error.message); return; }
+
+  toast('success', '¡Anotado!', `${esc(nombre)} apoya a la reina del curso.`);
+  inpNombre.value = '';
+  document.getElementById('addPagado').checked = true;
+  inpNombre.focus();
+  await cargar();
+}
+
+/* ── UPDATE: marcar pagado / pendiente ── */
+async function togglePagado(id) {
+  const a = apoyos.find(x => x.id === id);
+  if (!a) return;
+  const { error } = await window.supabase
+    .from('apoyos_reina').update({ pagado: !a.pagado }).eq('id', id);
+  if (error) { toast('error', 'No se pudo actualizar', error.message); return; }
+  toast('success', !a.pagado ? '¡Cuota recibida!' : 'Marcado como pendiente',
+    `${esc(a.nombre)} · ${fmtMonto(a.monto)}`);
+  await cargar();
+}
+
+/* ── UPDATE: editar ── */
+function abrirEditar(id) {
+  const a = apoyos.find(x => x.id === id);
+  if (!a) return;
+  editId = id;
+  document.getElementById('edNombre').value = a.nombre;
+  document.getElementById('edMonto').value  = a.monto;
+  document.getElementById('edPagado').checked = !!a.pagado;
+  document.getElementById('msgEditar').textContent = '';
+  modalEd.show();
+}
+
+async function guardarEdicion() {
+  const nombre = document.getElementById('edNombre').value.trim().toUpperCase();
+  const monto  = Number(String(document.getElementById('edMonto').value).replace(',', '.'));
+  const pagado = document.getElementById('edPagado').checked;
+  const msg    = document.getElementById('msgEditar');
+
+  if (!nombre) { msg.textContent = 'El nombre es obligatorio.'; return; }
+  if (!Number.isFinite(monto) || monto <= 0) { msg.textContent = 'El monto debe ser un número mayor a 0.'; return; }
+  msg.textContent = '';
+
+  const btn = document.getElementById('btnGuardarEd');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-sm"></span> Guardando…';
+
+  const { error } = await window.supabase
+    .from('apoyos_reina')
+    .update({ nombre, monto, pagado })
+    .eq('id', editId);
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar cambios';
+
+  if (error) { toast('error', 'No se pudo guardar', error.message); return; }
+  toast('success', '¡Cambios guardados!');
+  modalEd.hide();
+  await cargar();
+}
+
+/* ── DELETE ── */
+function abrirEliminar(id) {
+  const a = apoyos.find(x => x.id === id);
+  if (!a) return;
+  delId = id;
+  document.getElementById('delNombre').textContent = a.nombre;
+  modalDel.show();
+}
+
+async function confirmarEliminar() {
+  const btn = document.getElementById('btnConfirmDel');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-sm"></span> Eliminando…';
+
+  const { error } = await window.supabase
+    .from('apoyos_reina').delete().eq('id', delId);
+
+  btn.disabled = false;
+  btn.textContent = 'Sí, eliminar';
+
+  if (error) { toast('error', 'No se pudo eliminar', error.message); return; }
+  toast('success', 'Eliminado', 'La persona fue quitada de la lista.');
+  modalDel.hide();
+  await cargar();
+}
+
+/* ── Reporte en imagen ── */
+let reporteCanvas = null;
+let modalVisor;
+
+async function construirImagen() {
+  // Ordenados alfabéticamente para el reporte
+  const rows = [...apoyos].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  const recaudado = rows.filter(a => a.pagado).reduce((s, a) => s + (Number(a.monto) || 0), 0);
+
+  document.getElementById('captura-subtitulo').textContent = `Cuota de $2.00 · ${rows.length} participante(s)`;
+  document.getElementById('captura-fecha').textContent = new Date().toLocaleString('es-EC');
+  document.getElementById('captura-totales').textContent =
+    `Total apoyan: ${rows.length}   ·   Recaudado: ${fmtMonto(recaudado)}`;
+
+  document.getElementById('captura-body').innerHTML = rows.map((a, i) => `
+    <tr style="background:${i % 2 === 0 ? '#ffffff' : '#fffbeb'};">
+      <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;color:#94a3b8;">${i + 1}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;font-weight:600;">${esc(a.nombre)}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;text-align:center;">
+        <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;
+          background:${a.pagado ? '#d1fae5' : '#fef3c7'};color:${a.pagado ? '#065f46' : '#92400e'};">
+          ${a.pagado ? 'PAGADO' : 'PENDIENTE'}</span>
+      </td>
+      <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:700;">${fmtMonto(a.monto)}</td>
+    </tr>`).join('');
+
+  await new Promise(r => setTimeout(r, 100));
+  return html2canvas(document.getElementById('captura-wrapper'), { scale: 2, backgroundColor: '#ffffff', logging: false });
+}
+
+async function abrirVisor() {
+  if (apoyos.length === 0) { toast('warning', 'Sin datos', 'Aún no hay nadie anotado para generar el reporte.'); return; }
+
+  const img = document.getElementById('visorImg');
+  const cargando = document.getElementById('visorCargando');
+  reporteCanvas = null;
+  img.style.display = 'none'; img.src = '';
+  cargando.style.display = 'block';
+  document.getElementById('btnCopiarImg').disabled = true;
+  document.getElementById('btnDescargarImg').disabled = true;
+  modalVisor.show();
+
+  try {
+    reporteCanvas = await construirImagen();
+  } catch (e) {
+    console.error(e);
+    toast('error', 'No se pudo generar', 'Ocurrió un error al crear la imagen.');
+    modalVisor.hide();
+    return;
+  }
+
+  img.src = reporteCanvas.toDataURL('image/png');
+  img.style.display = 'inline-block';
+  cargando.style.display = 'none';
+  document.getElementById('btnCopiarImg').disabled = false;
+  document.getElementById('btnDescargarImg').disabled = false;
+}
+
+async function copiarImagen() {
+  if (!reporteCanvas) return;
+  try {
+    const blob = await new Promise(res => reporteCanvas.toBlob(res, 'image/png'));
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    toast('success', '¡Imagen copiada!', 'Ya puedes pegarla en WhatsApp o donde quieras.');
+  } catch (e) {
+    console.error(e);
+    toast('error', 'No se pudo copiar', 'Tu navegador no lo permite. Usa el botón Descargar.');
+  }
+}
+
+function descargarImagen() {
+  if (!reporteCanvas) return;
+  const a = document.createElement('a');
+  const fecha = new Date().toISOString().slice(0, 10);
+  a.download = `Apoyo_Reina_${fecha}.jpg`;
+  a.href = reporteCanvas.toDataURL('image/jpeg', 0.95);
+  a.click();
+  toast('success', 'Imagen descargada');
+}
+
+/* ── Init ── */
+document.getElementById('buscar').addEventListener('input', render);
+document.getElementById('btnAdd').addEventListener('click', agregar);
+document.getElementById('addNombre').addEventListener('keydown', e => { if (e.key === 'Enter') agregar(); });
+document.getElementById('btnGuardarEd').addEventListener('click', guardarEdicion);
+document.getElementById('btnConfirmDel').addEventListener('click', confirmarEliminar);
+document.getElementById('btnReporte').addEventListener('click', abrirVisor);
+document.getElementById('btnCopiarImg').addEventListener('click', copiarImagen);
+document.getElementById('btnDescargarImg').addEventListener('click', descargarImagen);
+
+window.addEventListener('DOMContentLoaded', async () => {
+  modalEd    = new bootstrap.Modal(document.getElementById('modalEditar'));
+  modalDel   = new bootstrap.Modal(document.getElementById('modalEliminar'));
+  modalVisor = new bootstrap.Modal(document.getElementById('modalVisor'));
+  await cargar();
+
+  // Tiempo real: si alguien anota o edita desde otro celular, la lista se refresca sola.
+  window.supabase
+    .channel('reina_realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'apoyos_reina' }, cargar)
+    .subscribe();
+});
+</script>
+</body>
+</html>
