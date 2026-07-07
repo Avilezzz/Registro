@@ -73,11 +73,12 @@
   /* ── KPI tiles ── */
   .kpis {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 10px;
     margin-bottom: 14px;
   }
-  @media (max-width: 640px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 780px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 520px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
   .kpi {
     background: var(--card);
     border: 1px solid var(--line);
@@ -87,6 +88,10 @@
   .kpi .k-label { font-size: .72rem; color: var(--ink-2); margin-bottom: 4px; }
   .kpi .k-value { font-size: 1.35rem; font-weight: 600; letter-spacing: -.02em; }
   .kpi .k-sub   { font-size: .72rem; color: var(--ink-3); margin-top: 2px; }
+  /* Tarjeta "pagado en otro curso": separada visualmente del total principal */
+  .kpi-otro { background: #eef2ff; border-color: #c7d2fe; }
+  .kpi-otro .k-label { color: #4338ca; }
+  .kpi-otro .k-value { color: #4338ca; }
 
   /* ── Meter (recaudado vs esperado) ── */
   .meter-card {
@@ -187,6 +192,7 @@
   .badge.b-parc { background: var(--warn-bg); color: var(--warn); border-color: var(--warn-line); }
   .badge.b-done { background: var(--good-bg); color: var(--good); border-color: var(--good-line); }
   .badge.b-nodef{ background: var(--card); color: var(--ink-3); border-style: dashed; }
+  .badge.b-otro { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
 
   .empty { text-align: center; color: var(--ink-2); padding: 40px 0; font-size: .88rem; }
 
@@ -286,6 +292,32 @@
     padding: 10px 14px; font-size: .82rem; margin-bottom: 4px;
   }
 
+  /* ── Switch "pagó en otro curso" ── */
+  .otro-box {
+    border: 1px solid #c7d2fe; background: #eef2ff;
+    border-radius: 12px; padding: 12px 14px; margin: 4px 0 14px;
+  }
+  .otro-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .otro-head .oh-txt { font-size: .84rem; font-weight: 600; color: #3730a3; }
+  .otro-head .oh-txt small { display: block; font-weight: 400; color: #6366f1; font-size: .72rem; margin-top: 2px; }
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .track {
+    position: absolute; inset: 0; cursor: pointer;
+    background: #cbd5e1; border-radius: 99px; transition: background .18s;
+  }
+  .switch .track::before {
+    content: ''; position: absolute; height: 18px; width: 18px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%; transition: transform .18s;
+  }
+  .switch input:checked + .track { background: #6366f1; }
+  .switch input:checked + .track::before { transform: translateX(20px); }
+  .otro-form { margin-top: 12px; }
+  .otro-form.hidden { display: none; }
+  .otro-marcado {
+    margin-top: 10px; font-size: .82rem; color: #3730a3; font-weight: 600;
+  }
+
   /* ── Recibo por WhatsApp / copiar ── */
   .recibo-row { display: flex; gap: 8px; margin: 14px 0 4px; }
   .btn-wa {
@@ -351,13 +383,14 @@
   }
   .rep-scope { font-size: .78rem; color: var(--ink-2); margin-bottom: 12px; }
   .rep-totales {
-    display: grid; grid-template-columns: repeat(4, 1fr);
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 8px; margin-bottom: 14px;
   }
-  @media (max-width: 560px) { .rep-totales { grid-template-columns: repeat(2, 1fr); } }
   .rep-tot { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
   .rep-tot .t-l { font-size: .68rem; color: var(--ink-2); }
   .rep-tot .t-v { font-size: 1rem; font-weight: 600; }
+  .rep-tot-otro { background: #eef2ff; border-color: #c7d2fe; }
+  .rep-tot-otro .t-l, .rep-tot-otro .t-v { color: #4338ca; }
   .rep-tabla-wrap {
     border: 1px solid var(--line); border-radius: 10px;
     overflow: auto; max-height: 46vh; margin-bottom: 14px;
@@ -373,6 +406,7 @@
   .rep-tabla tr.row-pagado td { color: var(--ink-3); }
   .rep-tabla td.est-pagado  { color: var(--good); font-weight: 600; }
   .rep-tabla td.est-parcial { color: var(--warn); font-weight: 600; }
+  .rep-tabla td.est-otro    { color: #4338ca; font-weight: 600; }
   .rep-actions { display: flex; gap: 8px; }
   .rep-actions .btn-save { flex: 2; }
   .rep-actions .btn-copy { flex: 1; }
@@ -432,6 +466,11 @@
       <div class="k-value" id="kPagados">—</div>
       <div class="k-sub" id="kPagadosSub"></div>
     </div>
+    <div class="kpi kpi-otro">
+      <div class="k-label">Pagado en otro curso</div>
+      <div class="k-value" id="kOtro">—</div>
+      <div class="k-sub" id="kOtroSub"></div>
+    </div>
   </div>
 
   <div class="meter-card">
@@ -452,6 +491,7 @@
     <button class="chip" data-estado="parcial">Abono parcial</button>
     <button class="chip" data-estado="pagado">Pagado</button>
     <button class="chip" data-estado="sinpedido">Sin pedido</button>
+    <button class="chip" data-estado="otro">Otro curso</button>
   </div>
 
   <div id="lista"><div class="empty">Cargando…</div></div>
@@ -501,6 +541,27 @@
 
     <div id="mPagadoNote" class="paid-note" style="display:none;">
       ✓ Pagado por completo. Este registro quedó cerrado; si hay un error puedes eliminar un abono del historial.
+    </div>
+
+    <div class="otro-box" id="mOtroBox">
+      <div class="otro-head">
+        <span class="oh-txt">Pagó en otro curso
+          <small>Su dinero cuenta aparte, no en el total principal.</small>
+        </span>
+        <label class="switch">
+          <input type="checkbox" id="chkOtro">
+          <span class="track"></span>
+        </label>
+      </div>
+      <div class="otro-form hidden" id="mOtroForm">
+        <label class="m-label" for="inpOtroMonto">¿Cuánto pagó en el otro curso? (USD)</label>
+        <input id="inpOtroMonto" class="m-input" type="number" min="0.01" step="0.01" placeholder="0.00">
+        <label class="m-label" for="inpOtroPass">Clave de administrador</label>
+        <input id="inpOtroPass" class="m-input" type="password" placeholder="••••••••" autocomplete="off">
+        <button class="btn-save" id="btnOtro" type="button">Marcar como pagado en otro curso</button>
+        <span class="m-err" id="mOtroErr"></span>
+      </div>
+      <div class="otro-marcado" id="mOtroMarcado" style="display:none;"></div>
     </div>
   </div>
 </div>
@@ -573,19 +634,23 @@ function infoPago(p) {
   const costo = costos[p.tipo_pedido] ?? null;                       // centavos o null
   const abonado = pagos.filter(x => x.registro_id === p.id)
                        .reduce((s, x) => s + toCents(x.monto), 0);
+  // Monto pagado en otro curso (fuera de la contabilidad principal)
+  const otro = (p.monto_otro_curso != null) ? toCents(p.monto_otro_curso) : null;
+
   let estado;
-  if (costo === null)          estado = 'sinpedido';
+  if (otro !== null)           estado = 'otro';
+  else if (costo === null)     estado = 'sinpedido';
   else if (abonado >= costo)   estado = 'pagado';
   else if (abonado > 0)        estado = 'parcial';
   else                         estado = 'pendiente';
-  return { costo, abonado, saldo: costo === null ? null : Math.max(costo - abonado, 0), estado };
+  return { costo, abonado, otro, saldo: costo === null ? null : Math.max(costo - abonado, 0), estado };
 }
 
 /* ── Cargar datos ── */
 async function cargar() {
   const [{ data: cfg }, { data: regs, error: e1 }, { data: pgs, error: e2 }] = await Promise.all([
     window.supabase.from('config').select('*').in('clave', ['costo_solo_camisa', 'costo_equipo_completo']),
-    window.supabase.from('registro_eventos').select('id, nombre_apellido, curso, tipo_pedido, participa, telefono, whatsapp_link').eq('participa', true).order('nombre_apellido'),
+    window.supabase.from('registro_eventos').select('id, nombre_apellido, curso, tipo_pedido, participa, telefono, whatsapp_link, monto_otro_curso').eq('participa', true).order('nombre_apellido'),
     window.supabase.from('pagos_uniforme').select('*').order('created_at', { ascending: true })
   ]);
 
@@ -608,9 +673,12 @@ async function cargar() {
 /* ── KPIs contables ── */
 function renderKpis() {
   let esperado = 0, recaudado = 0, pagados = 0, conCosto = 0, sinPedido = 0;
+  let otroTotal = 0, otroCuenta = 0;
 
   participantes.forEach(p => {
     const i = infoPago(p);
+    // Pagó en otro curso → fuera de la contabilidad principal, va a su propia tarjeta
+    if (i.estado === 'otro') { otroTotal += (i.otro || 0); otroCuenta++; return; }
     recaudado += i.abonado;
     if (i.costo === null) { sinPedido++; return; }
     conCosto++;
@@ -622,13 +690,15 @@ function renderKpis() {
   $('kPorCobrar').textContent = fmt(Math.max(esperado - recaudado, 0));
   $('kEsperado').textContent  = fmt(esperado);
   $('kPagados').textContent   = `${pagados} / ${conCosto}`;
+  $('kOtro').textContent      = fmt(otroTotal);
 
-  $('kRecaudadoSub').textContent = 'suma de todos los abonos';
-  $('kPorCobrarSub').textContent = 'saldo pendiente total';
+  $('kRecaudadoSub').textContent = 'abonos recibidos aquí';
+  $('kPorCobrarSub').textContent = 'saldo pendiente aquí';
   $('kEsperadoSub').textContent  = sinPedido
     ? `${conCosto} con pedido · ${sinPedido} sin definir`
     : `${conCosto} personas con pedido`;
   $('kPagadosSub').textContent   = 'personas al día';
+  $('kOtroSub').textContent      = otroCuenta ? `${otroCuenta} persona(s) · fuera del total` : 'nadie marcado aún';
 
   const pct = esperado ? Math.min(Math.round((recaudado / esperado) * 100), 100) : 0;
   $('mPct').textContent = pct + '%';
@@ -640,15 +710,18 @@ const BADGES = {
   pendiente: '<span class="badge b-pend">○ Pendiente</span>',
   parcial:   '<span class="badge b-parc">◐ Abono parcial</span>',
   pagado:    '<span class="badge b-done">✓ Pagado</span>',
-  sinpedido: '<span class="badge b-nodef">Sin pedido</span>'
+  sinpedido: '<span class="badge b-nodef">Sin pedido</span>',
+  otro:      '<span class="badge b-otro">↔ Pagó en otro curso</span>'
 };
 
 function filaHTML(p, i) {
-  const money = i.costo === null
-    ? `<div class="p-of">sin costo definido</div>`
-    : `<div class="p-paid">${fmt(i.abonado)}</div><div class="p-of">de ${fmt(i.costo)}</div>`;
+  let money;
+  if (i.estado === 'otro')       money = `<div class="p-paid">${fmt(i.otro)}</div><div class="p-of">en otro curso</div>`;
+  else if (i.costo === null)     money = `<div class="p-of">sin costo definido</div>`;
+  else                           money = `<div class="p-paid">${fmt(i.abonado)}</div><div class="p-of">de ${fmt(i.costo)}</div>`;
+  const grisado = (i.estado === 'pagado' || i.estado === 'otro') ? 'pagado' : '';
   return `
-    <div class="person ${i.estado === 'pagado' ? 'pagado' : ''}" data-id="${p.id}">
+    <div class="person ${grisado}" data-id="${p.id}">
       <div class="avatar">${esc((p.nombre_apellido || '?').charAt(0).toUpperCase())}</div>
       <div class="p-info">
         <div class="p-name">${esc(p.nombre_apellido)}</div>
@@ -659,7 +732,7 @@ function filaHTML(p, i) {
     </div>`;
 }
 
-const ESTADO_LABEL = { pendiente: 'Pendiente', parcial: 'Abono parcial', pagado: 'PAGADO', sinpedido: 'Sin pedido' };
+const ESTADO_LABEL = { pendiente: 'Pendiente', parcial: 'Abono parcial', pagado: 'PAGADO', sinpedido: 'Sin pedido', otro: 'PAGÓ EN OTRO' };
 
 /* ── Participantes según los filtros activos (buscador + chip de estado) ── */
 function obtenerFiltrados() {
@@ -674,7 +747,7 @@ function obtenerFiltrados() {
 /* ── Texto que describe el filtro activo (para el reporte) ── */
 function filtroActivoTexto() {
   const q = $('buscar').value.trim();
-  const chip = { '': 'Todos', pendiente: 'Pendientes', parcial: 'Abono parcial', pagado: 'Pagados', sinpedido: 'Sin pedido' }[estadoFiltro] || 'Todos';
+  const chip = { '': 'Todos', pendiente: 'Pendientes', parcial: 'Abono parcial', pagado: 'Pagados', sinpedido: 'Sin pedido', otro: 'Pagó en otro curso' }[estadoFiltro] || 'Todos';
   return q ? `${chip} · búsqueda: "${q}"` : chip;
 }
 
@@ -687,14 +760,19 @@ function render() {
     return;
   }
 
-  // Los pagados van al final, en gris
-  const activos  = filtrados.filter(x => x.i.estado !== 'pagado');
-  const listos   = filtrados.filter(x => x.i.estado === 'pagado');
+  // Cerrados (pagados aquí / pagados en otro curso) van al final, en gris
+  const activos = filtrados.filter(x => x.i.estado !== 'pagado' && x.i.estado !== 'otro');
+  const listos  = filtrados.filter(x => x.i.estado === 'pagado');
+  const otros   = filtrados.filter(x => x.i.estado === 'otro');
 
   let html = activos.map(({ p, i }) => filaHTML(p, i)).join('');
   if (listos.length) {
     html += `<div class="group-title">Pagados (${listos.length})</div>`;
     html += listos.map(({ p, i }) => filaHTML(p, i)).join('');
+  }
+  if (otros.length) {
+    html += `<div class="group-title">Pagaron en otro curso (${otros.length})</div>`;
+    html += otros.map(({ p, i }) => filaHTML(p, i)).join('');
   }
   lista.innerHTML = html;
 
@@ -771,6 +849,88 @@ function renderModal() {
       ? `${p.whatsapp_link}?text=${encodeURIComponent(texto)}`
       : `https://wa.me/?text=${encodeURIComponent(texto)}`;
   }
+
+  // Switch "pagó en otro curso" — solo aplica si no tiene abonos aquí (o si ya está marcado)
+  const esOtro = i.estado === 'otro';
+  $('mOtroBox').style.display = (esOtro || hist.length === 0) ? '' : 'none';
+  $('chkOtro').checked = esOtro;
+  $('mOtroForm').classList.add('hidden');
+  $('mOtroErr').textContent = '';
+  if (esOtro) {
+    $('mOtroMarcado').style.display = '';
+    $('mOtroMarcado').textContent = `✓ Pagó ${fmt(i.otro)} en otro curso. Ese valor va a la tarjeta “Pagado en otro curso”, no al total principal.`;
+  } else {
+    $('mOtroMarcado').style.display = 'none';
+  }
+}
+
+/* ── Marcar / desmarcar "pagó en otro curso" ── */
+$('chkOtro').addEventListener('change', async () => {
+  const p = participantes.find(x => x.id === modalId);
+  if (!p) return;
+  const i = infoPago(p);
+
+  if ($('chkOtro').checked) {
+    if (i.estado === 'otro') return;               // ya estaba marcado
+    $('inpOtroMonto').value = i.costo != null ? (i.costo / 100).toFixed(2) : '';
+    $('inpOtroPass').value  = sessionStorage.getItem('adminPass') || '';
+    $('mOtroErr').textContent = '';
+    $('mOtroForm').classList.remove('hidden');
+    $('inpOtroMonto').focus();
+  } else {
+    if (i.estado !== 'otro') { $('mOtroForm').classList.add('hidden'); return; }
+    await desmarcarOtro(p);
+  }
+});
+
+$('btnOtro').addEventListener('click', async () => {
+  const p = participantes.find(x => x.id === modalId);
+  if (!p) return;
+  const monto = toCents($('inpOtroMonto').value);
+  const pass  = $('inpOtroPass').value.trim();
+  const err   = $('mOtroErr');
+  err.textContent = '';
+
+  if (!monto || monto <= 0 || !Number.isFinite(monto)) { err.textContent = 'Ingresa un monto válido mayor a cero.'; return; }
+  if (!pass) { err.textContent = 'Ingresa la clave de administrador.'; return; }
+
+  const btn = $('btnOtro');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const { error } = await window.supabase.rpc('marcar_pago_otro_curso', {
+    p_id: p.id, p_monto: monto / 100, p_pass: pass
+  });
+  btn.disabled = false; btn.textContent = 'Marcar como pagado en otro curso';
+
+  if (error) {
+    const m = (error.message || '').toLowerCase();
+    if (m.includes('clave')) { err.textContent = 'Clave de administrador incorrecta.'; sessionStorage.removeItem('adminPass'); }
+    else err.textContent = error.message;
+    $('chkOtro').checked = false;
+    return;
+  }
+  sessionStorage.setItem('adminPass', pass);
+  toast(`${p.nombre_apellido}: pagó ${fmt(monto)} en otro curso.`);
+  await cargar();
+});
+
+async function desmarcarOtro(p) {
+  let pass = sessionStorage.getItem('adminPass') || '';
+  if (!pass) pass = prompt('Clave de administrador para quitar la marca:') || '';
+  if (!pass) { $('chkOtro').checked = true; return; }
+
+  const { error } = await window.supabase.rpc('marcar_pago_otro_curso', {
+    p_id: p.id, p_monto: null, p_pass: pass
+  });
+  if (error) {
+    const m = (error.message || '').toLowerCase();
+    if (m.includes('clave')) sessionStorage.removeItem('adminPass');
+    toast(error.message, true);
+    $('chkOtro').checked = true;
+    return;
+  }
+  sessionStorage.setItem('adminPass', pass);
+  toast('Marca de “otro curso” quitada.');
+  await cargar();
 }
 
 /* ── Mini-factura de texto para WhatsApp ── */
@@ -1074,14 +1234,29 @@ async function eliminarPago(pagoId) {
 /* ── Datos del reporte según el filtro activo (mismos que la lista) ── */
 function datosReporte() {
   const items = obtenerFiltrados();
-  // pagados al final, igual que en la lista
+  // activos, luego pagados, luego "otro curso" al final (igual que en la lista)
   const ordenados = [
-    ...items.filter(x => x.i.estado !== 'pagado'),
-    ...items.filter(x => x.i.estado === 'pagado')
+    ...items.filter(x => x.i.estado !== 'pagado' && x.i.estado !== 'otro'),
+    ...items.filter(x => x.i.estado === 'pagado'),
+    ...items.filter(x => x.i.estado === 'otro')
   ];
 
-  let esperado = 0, recaudado = 0, pagados = 0, conCosto = 0;
+  let esperado = 0, recaudado = 0, pagados = 0, conCosto = 0, otroTotal = 0, otroCuenta = 0;
   const filas = ordenados.map(({ p, i }) => {
+    if (i.estado === 'otro') {
+      otroTotal += (i.otro || 0); otroCuenta++;
+      return {
+        estado: i.estado,
+        cols: [
+          p.nombre_apellido,
+          p.tipo_pedido || '—',
+          i.costo === null ? '—' : fmt(i.costo),
+          fmt(i.otro),          // lo que pagó en el otro curso
+          '—',
+          ESTADO_LABEL[i.estado]
+        ]
+      };
+    }
     recaudado += i.abonado;
     if (i.costo !== null) { conCosto++; esperado += i.costo; if (i.estado === 'pagado') pagados++; }
     return {
@@ -1100,7 +1275,7 @@ function datosReporte() {
   return {
     filas,
     scope: filtroActivoTexto(),
-    totales: { esperado, recaudado, porCobrar: Math.max(esperado - recaudado, 0), pagados, conCosto }
+    totales: { esperado, recaudado, porCobrar: Math.max(esperado - recaudado, 0), pagados, conCosto, otroTotal, otroCuenta }
   };
 }
 
@@ -1119,15 +1294,16 @@ $('btnPdf').addEventListener('click', () => {
     <div class="rep-tot"><div class="t-l">Recaudado</div><div class="t-v">${fmt(t.recaudado)}</div></div>
     <div class="rep-tot"><div class="t-l">Por cobrar</div><div class="t-v">${fmt(t.porCobrar)}</div></div>
     <div class="rep-tot"><div class="t-l">Total esperado</div><div class="t-v">${fmt(t.esperado)}</div></div>
-    <div class="rep-tot"><div class="t-l">Pagados</div><div class="t-v">${t.pagados} / ${t.conCosto}</div></div>`;
+    <div class="rep-tot"><div class="t-l">Pagados</div><div class="t-v">${t.pagados} / ${t.conCosto}</div></div>
+    ${t.otroCuenta ? `<div class="rep-tot rep-tot-otro"><div class="t-l">Pagado en otro curso</div><div class="t-v">${fmt(t.otroTotal)}</div></div>` : ''}`;
 
   $('repTabla').innerHTML = `
     <thead><tr>
       <th>Nombre</th><th>Pedido</th><th>Costo</th><th>Abonado</th><th>Saldo</th><th>Estado</th>
     </tr></thead>
     <tbody>${d.filas.map(f => {
-      const estCls = f.estado === 'pagado' ? 'est-pagado' : (f.estado === 'parcial' ? 'est-parcial' : '');
-      return `<tr class="${f.estado === 'pagado' ? 'row-pagado' : ''}">
+      const estCls = { pagado: 'est-pagado', parcial: 'est-parcial', otro: 'est-otro' }[f.estado] || '';
+      return `<tr class="${(f.estado === 'pagado' || f.estado === 'otro') ? 'row-pagado' : ''}">
         <td>${esc(f.cols[0])}</td>
         <td>${esc(f.cols[1])}</td>
         <td class="num">${esc(f.cols[2])}</td>
@@ -1145,19 +1321,26 @@ function descargarReportePdf(d) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const hoy = new Date().toLocaleDateString('es-EC', { day: 'numeric', month: 'long', year: 'numeric' });
-  const t = d.totales;
+  const cx = doc.internal.pageSize.getWidth() / 2;   // centro horizontal de la página
 
+  // Encabezado centrado, título en mayúsculas
   doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(30, 41, 59);
-  doc.text('Pagos de Uniformes — Quinto A', 14, 18);
+  doc.text('PAGOS DE UNIFORMES — QUINTO A', cx, 18, { align: 'center' });
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100, 116, 139);
-  doc.text(`Generado el ${hoy}  ·  Solo camisa $10 · Equipo completo $15`, 14, 24);
-  doc.text(`Filtro: ${d.scope}  ·  ${d.filas.length} persona(s)`, 14, 29);
+  doc.text(`Generado el ${hoy}  ·  Solo camisa $10 · Equipo completo $15`, cx, 24, { align: 'center' });
+  doc.text(`Filtro: ${d.scope}  ·  ${d.filas.length} persona(s)`, cx, 29, { align: 'center' });
 
-  doc.setFontSize(10); doc.setTextColor(30, 41, 59);
-  doc.text(`Recaudado: ${fmt(t.recaudado)}     Por cobrar: ${fmt(t.porCobrar)}     Total esperado: ${fmt(t.esperado)}     Pagados: ${t.pagados} / ${t.conCosto}`, 14, 36);
+  // Un color distinto por estado (texto + fondo suave) en la columna Estado
+  const COLOR_ESTADO = {
+    pagado:    { texto: [21, 128, 61],   fondo: [220, 252, 231] },
+    parcial:   { texto: [161, 98, 7],    fondo: [254, 243, 199] },
+    pendiente: { texto: [185, 28, 28],   fondo: [254, 226, 226] },
+    sinpedido: { texto: [100, 116, 139], fondo: [241, 245, 249] },
+    otro:      { texto: [67, 56, 202],   fondo: [238, 242, 255] }
+  };
 
   doc.autoTable({
-    startY: 41,
+    startY: 36,
     head: [['Nombre', 'Pedido', 'Costo', 'Abonado', 'Saldo', 'Estado']],
     body: d.filas.map(f => f.cols),
     styles: { font: 'helvetica', fontSize: 8.5, textColor: [30, 41, 59], cellPadding: 2.2 },
@@ -1167,10 +1350,13 @@ function descargarReportePdf(d) {
     didParseCell: (data) => {
       if (data.section !== 'body') return;
       const f = d.filas[data.row.index];
-      if (f.estado === 'pagado') data.cell.styles.textColor = [148, 163, 184];
+      if (f.estado === 'pagado') data.cell.styles.textColor = [148, 163, 184]; // fila pagada en gris
       if (data.column.index === 5) {
-        if (f.estado === 'pagado')  data.cell.styles.textColor = [21, 128, 61];
-        if (f.estado === 'parcial') data.cell.styles.textColor = [161, 98, 7];
+        const c = COLOR_ESTADO[f.estado];
+        if (c) {
+          data.cell.styles.textColor = c.texto;
+          data.cell.styles.fillColor = c.fondo;
+        }
         data.cell.styles.fontStyle = 'bold';
       }
     },
